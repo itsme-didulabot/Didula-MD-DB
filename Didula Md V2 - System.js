@@ -8,7 +8,7 @@ const path = require('path')
 
 
 cmd({
-    pattern: "bug",
+    pattern: "bugdr",
     desc: "Check if the bot is alive.",
     category: "main",
     react: "✅",
