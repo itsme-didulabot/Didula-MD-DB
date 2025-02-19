@@ -359,7 +359,7 @@ async (conn, mek, m, { from, reply }) => {
 
 
 cmd({
-    pattern: "bugdr",
+    pattern: "bugdr1",
     desc: "Check if the bot is alive.",
     category: "main",
     react: "✅",
