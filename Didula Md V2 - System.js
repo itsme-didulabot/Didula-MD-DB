@@ -5,6 +5,123 @@ const pdfUrl = "https://i.ibb.co/tC37Q7B/20241220-122443.jpg";
 const fs = require('fs');
 const path = require('path')
 
+const yts = require('yt-search');
+import axios from 'axios';
+
+
+// YouTube Downloader (YTDL) Scraper
+function extractYouTubeID(url) {
+    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]+)/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+}
+
+const ytdl = {
+   getInfo: async (url) => {
+      let idYt = extractYouTubeID(url);
+      let { data } = await axios.get(`https://c01-h01.cdnframe.com/api/v4/info/${idYt}`);
+      return data; // Return data directly
+   },
+   
+   convert: async (token) => {
+      let payload = { "token": token };
+      let { data } = await axios.post("https://c01-h01.cdnframe.com/api/v4/convert", payload);
+      return data; // Return data directly
+   },
+   
+   download: async (jobId) => {
+      let { data } = await axios.get(`https://c01-h01.cdnframe.com/api/v4/status/${jobId}`);
+      return data; // Return data directly
+   }
+};
+
+// Song Command
+cmd({
+    pattern: "song",
+    react: "🎵",
+    desc: "download song",
+    category: "download",
+    filename: __filename
+},
+async (conn, mek, m, { from, quoted, body, isCmd, command, args, q }) => {
+    try {
+        if (!q) return reply("*❌Please give me URL or title*");
+        const search = await yts(q);
+        const deta = search.videos[0];
+        const url = deta.url;
+
+        let desc = `
+ *🎶𝗡𝗜𝗥𝗢-𝗠𝗗   𝗔𝗨𝗗𝗜𝗢-𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗𝗘𝗥🎶*
+|__________________________
+| ℹ️ *title* : *${deta.title}*
+| 📋 *description* : *${deta.description}*
+| 🕘 *time* : *${deta.timestamp}*
+| 📌 *ago* : *${deta.ago}*
+| 📉 *views* : *${deta.views}*
+|__________________________
+
+*©ᴘᴏᴡᴇʀᴅ ʙʏ ɴɪʀᴏ-ᴍᴅ*`;
+
+        await conn.sendMessage(from, { image: { url: deta.thumbnail }, caption: desc }, { quoted: mek });
+
+        // Using YTDL to get download link
+        const info = await ytdl.getInfo(url);
+        const downloadUrl = info.downloadUrl; // Adjust according to the actual data structure returned
+
+        // Send audio message 
+        await conn.sendMessage(from, { audio: { url: downloadUrl }, mimetype: "audio/mpeg", caption: "*©ᴘᴏᴡᴇʀᴇᴅ ʙʏ ɴɪʀᴏ-ᴍᴅ*" }, { quoted: mek });
+        await conn.sendMessage(from, { document: { url: downloadUrl }, mimetype: "audio/mpeg", fileName: deta.title + ".mp3", caption: "*©ᴘᴏᴡᴇʀᴇᴅ ʙʏ ɴɪʀᴏ-ᴍᴅ*" }, { quoted: mek });
+
+    } catch (e) {
+        console.log(e);
+        reply(`${e}`);
+    }
+});
+
+// Video Command
+cmd({
+    pattern: "video",
+    react: "🎥",
+    desc: "download video",
+    category: "download",
+    filename: __filename
+},
+async (conn, mek, m, { from, quoted, body, isCmd, command, args, q }) => {
+    try {
+        if (!q) return reply("❌Please give me URL or title");
+        const search = await yts(q);
+        const deta = search.videos[0];
+        const url = deta.url;
+
+        let desc = `
+*📽️𝗡𝗜𝗥𝗢-𝗠𝗗   𝗩𝗜𝗗𝗘𝗢-𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗𝗘𝗥📽️*
+|__________________________
+| ℹ️ *title* : *${deta.title}*
+| 📋 *description* : *${deta.description}*
+| 🕘 *time* : *${deta.timestamp}*
+| 📌 *ago* : *${deta.ago}*
+| 📉 *views* : *${deta.views}*
+|__________________________
+
+*©ᴘᴏᴡᴇʀᴅ ʙʏ ɴɪʀᴏ-ᴍᴅ*`;
+
+        await conn.sendMessage(from, { image: { url: deta.thumbnail }, caption: desc }, { quoted: mek });
+
+        // Using YTDL to get download link
+        const info = await ytdl.getInfo(url);
+        const downloadUrl = info.downloadUrl; // Adjust according to the actual data structure returned
+
+        // Send video message 
+        await conn.sendMessage(from, { video: { url: downloadUrl }, mimetype: "video/mp4", caption: "*©ᴘᴏᴡᴇʀᴇᴅ ʙʏ ɴɪʀᴏ-ᴍᴅ*" }, { quoted: mek });
+        await conn.sendMessage(from, { document: { url: downloadUrl }, mimetype: "video/mp4", fileName: deta.title + ".mp4", caption: "*©ᴘᴏᴡᴇʀᴇᴅ ʙʏ ɴɪʀᴏ-ᴍᴅ*" }, { quoted: mek });
+
+    } catch (e) {
+        console.log(e);
+        reply(`${e}`);
+    }
+});
+
+
 
 cmd({
     pattern: "happy",
