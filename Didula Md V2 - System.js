@@ -13,87 +13,68 @@ const yts = require('yt-search'); // For YouTube search
 const cheerio = require('cheerio'); // Import cheerio for HTML parsing
 
 
-const searchApiLink = 'https://api.giftedtech.my.id/api/search/xvideossearch'; // New Search API LINK
-const downloadApiLink = 'https://i.giftedtech.my.id/api/download/xvideosdl'; // New Download API LINK
-const apiKey = 'gifted'; // API Key for the new API
-
 cmd({
     pattern: "xvideo",
-    alias: ["xvdl", "xvdown"],
-    react: "🔞",
-    desc: "Download xvideo.com porn video",
+    alias: ["xvideo2"],
+    react: "🎥",
+    desc: "download xVideo",
     category: "download",
-    use: '.xvideo <text>',
     filename: __filename
 },
-async (conn, mek, m, { from, quoted, reply, q }) => {
+async(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
+try {
+    if (!q) return reply("*⚠️ Please provide a video title or URL*\n\n*Example:* .xvideo My MILF Secretary Love");
+
+    const query = String(q);
+    const searchResponse = await axios.get(`https://api.giftedtech.my.id/api/search/xvideossearch?apikey=gifted&query=${encodeURIComponent(query)}`);
+    
+    if (!searchResponse.data.results || !searchResponse.data.results.length) {
+        return reply("❌ No results found! Please try another search.");
+    }
+
+    const deta = searchResponse.data.results[0];
+    const videoUrl = deta.url;
+
+    let desc = `🎥 *Now Downloading:* ${deta.title}
+
+⏱️ *Duration:* ${deta.duration}
+👁️ *Views:* ${deta.views || 'N/A'}
+📅 *Quality:* ${deta.quality || 'N/A'}
+
+⏳ *Please wait, processing your request...*`;
+
+    await conn.sendMessage(from, { 
+        image: { url: deta.thumb }, 
+        caption: desc 
+    }, { quoted: mek }).catch(() => reply("❌ Error sending thumbnail"));
+
     try {
-        if (!q) {
-            return await reply("Please provide a search query!");
-        }
+        const downloadResponse = await axios.get(`https://api.giftedtech.my.id/api/download/xvideosdl?apikey=gifted&url=${encodeURIComponent(videoUrl)}`);
 
-        // Fetch search results
-        const searchResponse = await fetch(`${searchApiLink}?apikey=${apiKey}&query=${q}`);
-        if (!searchResponse.ok) {
-            return await reply("Failed to fetch search results. Please try again later.");
-        }
+        const downloadUrl = downloadResponse.data.result.download_url;
 
-        const searchResults = await searchResponse.json();
-        if (searchResults.length < 1) {
-            return await reply("No results found!");
-        }
-
-        const firstResult = searchResults[0];
-
-        // Fetch video details
-        const videoResponse = await fetch(`${downloadApiLink}?apikey=${apiKey}&url=${firstResult.url}`);
-        if (!videoResponse.ok) {
-            return await reply("Failed to fetch video details. Please try again later.");
-        }
-
-        const videoDetails = await videoResponse.json();
-
-        // Prepare the message
-        const msg = `
-            *乂 Didula MD-V2 XVIDEO DOWNLOADER* 🔞
-
-            • *Title* - ${videoDetails.title}
-            • *Views* - ${videoDetails.views}
-            • *Likes* - ${videoDetails.likes}
-            • *Dislikes* - ${videoDetails.dislikes}
-            • *Size* - ${videoDetails.size}
-
-            *© Projects of Didula Rashmika*`;
-
-        // Sending the message with details
-        await conn.sendMessage(from, {
-            text: msg,
-            contextInfo: {
-                forwardingScore: 999,
-                isForwarded: true,
-                externalAdReply: {
-                    title: `Didula MD-V2 Xvideo Downloader`,
-                    body: `Can't find the information. You can try another way. Error Code 4043`,
-                    thumbnailUrl: videoDetails.thumbnail,
-                    sourceUrl: '',
-                    mediaType: 1,
-                    renderLargerThumbnail: true
-                }
-            }
+        await conn.sendMessage(from, { 
+            video: { url: downloadUrl }, 
+            mimetype: "video/mp4", 
+            caption: "🎥 *Successfully Downloaded!*" 
         }, { quoted: mek });
 
-        // Send the video
-        await conn.sendMessage(from, {
-            video: { url: videoDetails.download_url },
-            caption: videoDetails.title
+        await conn.sendMessage(from, { 
+            document: { url: downloadUrl }, 
+            mimetype: "video/mp4", 
+            fileName: `${deta.title}.mp4`, 
+            caption: "📎 *Document Version*\n\n✨ *Thanks for using our service!*" 
         }, { quoted: mek });
 
     } catch (error) {
-        console.error(error);
-        await reply('An error occurred while processing your request. Please try again later.');
+        reply("❌ Error downloading video: " + error.message);
     }
-});
 
+} catch (e) {
+    console.log(e);
+    reply(`❌ Error: ${e.message}`);
+}
+});
 
 
 
