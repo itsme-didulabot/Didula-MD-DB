@@ -580,7 +580,7 @@ await conn.sendMessage(from, {
     }
 },{quoted:mek})
 
-await conn.sendMessage(from,{image:{url: 'https://i.ibb.co/tC37Q7B/20241220-122443.jpg'},caption: `*👤 Didula MD V2 Owner Details*\n\n*👨‍💻 Owner Name:* Didula Rashmika\n*📱 Owner Number:* wa.me/94741671668\n*📱 Owner Number:* wa.me/94771820962\n\n\n*💫 Thanks For Using Didula MD V2*`},{quoted:mek})
+await conn.sendMessage(from,{image:{url: 'https://files.catbox.moe/za6ytm.jpg'},caption: `*👤 Didula MD V2 Owner Details*\n\n*👨‍💻 Owner Name:* Didula Rashmika\n*📱 Owner Number:* wa.me/94741671668\n*📱 Owner Number:* wa.me/94771820962\n\n\n*💫 Thanks For Using Didula MD V2*`},{quoted:mek})
 
 } catch (e) {
     reply(e)
@@ -630,7 +630,7 @@ SPECIAL FEATURES 👀
 https://whatsapp.com/channel/0029VaqqF4GDTkJwKruLSK2f`;
 
         await conn.sendMessage(from, {
-            image: {url: 'https://i.ibb.co/tC37Q7B/20241220-122443.jpg'},
+            image: {url: 'https://files.catbox.moe/za6ytm.jpg'},
             caption: dec
         }, {quoted: mek});
 
