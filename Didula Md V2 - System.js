@@ -17,7 +17,7 @@ const cheerio = require('cheerio'); // Import cheerio for HTML parsing
 
 cmd({
     pattern: "song",
-alias: ["song2"],
+    alias: ["song2"],
     react: "🎵",
     desc: "download song",
     category: "download",
@@ -26,34 +26,59 @@ alias: ["song2"],
 async(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
 try {
     if (!q) return reply("*❌Please give me url or title*");
-    const search = await yts(q);
+    
+    // Ensure q is a string
+    const query = String(q);
+    const search = await yts(query);
+    
+    if (!search.videos || !search.videos.length) {
+        return reply("No results found!");
+    }
+    
     const deta = search.videos[0];
     const url = deta.url;
 
     let desc = `Downloading this song - 
 *${deta.title} 💚*`;
 
-    await conn.sendMessage(from, { image: { url: deta.thumbnail }, caption: desc }, { quoted: mek });
+    await conn.sendMessage(from, { 
+        image: { url: deta.thumbnail }, 
+        caption: desc 
+    }, { quoted: mek }).catch(() => reply("Error sending thumbnail"));
 
-    // Use the new API to download the song
-    const response = await axios.get(`https://api.giftedtech.my.id/api/download/dlmp4?apikey=gifted&url=${encodeURIComponent(url)}`);
-    const downloadUrl = response.data.download_url;
+    try {
+        const response = await axios.get(`https://api.giftedtech.my.id/api/download/dlmp4?apikey=gifted&url=${encodeURIComponent(url)}`);
+        if (!response.data || !response.data.download_url) {
+            throw new Error("Invalid download URL");
+        }
+        const downloadUrl = response.data.download_url;
 
-    // Send audio message
-    await conn.sendMessage(from, { audio: { url: downloadUrl }, mimetype: "audio/mpeg", caption: "*© Downloaded by your bot 💚*" }, { quoted: mek });
-    await conn.sendMessage(from, { document: { url: downloadUrl }, mimetype: "audio/mpeg", fileName: deta.title + ".mp3", caption: "*© Downloaded by your bot 💚*" }, { quoted: mek });
+        await conn.sendMessage(from, { 
+            audio: { url: downloadUrl }, 
+            mimetype: "audio/mpeg", 
+            caption: "*© Downloaded by your bot 💚*" 
+        }, { quoted: mek });
+
+        await conn.sendMessage(from, { 
+            document: { url: downloadUrl }, 
+            mimetype: "audio/mpeg", 
+            fileName: `${deta.title}.mp3`, 
+            caption: "*© Downloaded by your bot 💚*" 
+        }, { quoted: mek });
+
+    } catch (error) {
+        reply("Error downloading audio: " + error.message);
+    }
 
 } catch (e) {
     console.log(e);
-    reply(`${e}`);
+    reply(`Error: ${e.message}`);
 }
 });
 
-//========video download=======
-
 cmd({
     pattern: "video",
-alias: ["video2"],
+    alias: ["video2"],
     react: "🎥",
     desc: "download video",
     category: "download",
@@ -62,29 +87,55 @@ alias: ["video2"],
 async(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
 try {
     if (!q) return reply("❌Please give me url or title");
-    const search = await yts(q);
+    
+    // Ensure q is a string
+    const query = String(q);
+    const search = await yts(query);
+    
+    if (!search.videos || !search.videos.length) {
+        return reply("No results found!");
+    }
+    
     const deta = search.videos[0];
     const url = deta.url;
 
     let desc = `Downloading this video - 
 *${deta.title} 💚*`;
 
-    await conn.sendMessage(from, { image: { url: deta.thumbnail }, caption: desc }, { quoted: mek });
+    await conn.sendMessage(from, { 
+        image: { url: deta.thumbnail }, 
+        caption: desc 
+    }, { quoted: mek }).catch(() => reply("Error sending thumbnail"));
 
-    // Use the new API to download the video
-    const response = await axios.get(`https://api.giftedtech.my.id/api/download/dlmp4?apikey=gifted&url=${encodeURIComponent(url)}`);
-    const downloadUrl = response.data.download_url;
+    try {
+        const response = await axios.get(`https://api.giftedtech.my.id/api/download/dlmp4?apikey=gifted&url=${encodeURIComponent(url)}`);
+        if (!response.data || !response.data.download_url) {
+            throw new Error("Invalid download URL");
+        }
+        const downloadUrl = response.data.download_url;
 
-    // Send video message
-    await conn.sendMessage(from, { video: { url: downloadUrl }, mimetype: "video/mp4", caption: "*© Downloaded by your bot 💚*" }, { quoted: mek });
-    await conn.sendMessage(from, { document: { url: downloadUrl }, mimetype: "video/mp4", fileName: deta.title + ".mp4", caption: "*© Downloaded by your bot 💚*" }, { quoted: mek });
+        await conn.sendMessage(from, { 
+            video: { url: downloadUrl }, 
+            mimetype: "video/mp4", 
+            caption: "*© Downloaded by your bot 💚*" 
+        }, { quoted: mek });
+
+        await conn.sendMessage(from, { 
+            document: { url: downloadUrl }, 
+            mimetype: "video/mp4", 
+            fileName: `${deta.title}.mp4`, 
+            caption: "*© Downloaded by your bot 💚*" 
+        }, { quoted: mek });
+
+    } catch (error) {
+        reply("Error downloading video: " + error.message);
+    }
 
 } catch (e) {
     console.log(e);
-    reply(`${e}`);
+    reply(`Error: ${e.message}`);
 }
 });
-
 
 
 
