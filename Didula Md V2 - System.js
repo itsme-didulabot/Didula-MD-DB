@@ -11,6 +11,42 @@ const path = require('path')
 
 
 cmd({
+    pattern: "owner",
+    desc: "To check ping",
+    category: "main",
+    react: "👤",
+    filename: __filename
+},
+async(conn, mek, m,{from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply}) => {
+try{
+
+const vcard = 'BEGIN:VCARD\n'
+            + 'VERSION:3.0\n' 
+            + 'FN:Didula Rashmika\n'
+            + 'ORG:Didula MD V2;\n'
+            + 'TEL;type=CELL;type=VOICE;waid=94741671668:+94 741 671 668\n'
+            + 'TEL;type=CELL;type=VOICE;waid=94771820962:+94 771 820 962\n'
+            + 'END:VCARD'
+
+await conn.sendMessage(from, { 
+    contacts: { 
+        displayName: 'Didula Rashmika', 
+        contacts: [{ vcard }] 
+    }
+},{quoted:mek})
+
+await conn.sendMessage(from,{image:{url: 'https://i.ibb.co/tC37Q7B/20241220-122443.jpg'},caption: `*👤 Didula MD V2 Owner Details*\n\n*👨‍💻 Owner Name:* Didula Rashmika\n*📱 Owner Number:* wa.me/94741671668\n*📱 Owner Number:* wa.me/94771820962\n\n\n*💫 Thanks For Using Didula MD V2*`},{quoted:mek})
+
+} catch (e) {
+    reply(e)
+    }
+})
+
+
+
+
+
+cmd({
     pattern: "repo",
     desc: "repo the bot",
     react: "📡",
