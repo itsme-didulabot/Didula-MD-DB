@@ -14,165 +14,78 @@ const cheerio = require('cheerio'); // Import cheerio for HTML parsing
 
 
 
+
 cmd({
-  pattern: "song",
-  alias: ["song2"],
-  react: '🎶',
-  desc: "Download audio from YouTube by searching for keywords",
-  category: "music",
-  use: ".song <song name or keywords>",
-  filename: __filename
-}, async (conn, mek, msg, { from, args, reply }) => {
-  try {
-    if (!args.length) return reply("*Please provide a song name or keywords to search for.*");
-    
-    const searchQuery = args.join(" ");
-    const processingMessage = await sendProcessingMessage(conn, from, searchQuery, "Music");
+    pattern: "song",
+    react: "🎵",
+    desc: "download song",
+    category: "download",
+    filename: __filename
+},
+async(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
+try {
+    if (!q) return reply("*❌Please give me url or title*");
+    const search = await yts(q);
+    const deta = search.videos[0];
+    const url = deta.url;
 
-    const video = await getFirstVideoResult(searchQuery);
-    if (!video) return reply(`❌ No results found for "${searchQuery}".`);
+    let desc = `Downloading this song - 
+*${deta.title} 💚*`;
 
-    const audioData = await fetchAudioData(video.url);
-    if (!audioData) return reply(`❌ Failed to fetch audio for "${searchQuery}".`);
+    await conn.sendMessage(from, { image: { url: deta.thumbnail }, caption: desc }, { quoted: mek });
 
-    await sendAudioDetails(conn, from, audioData);
-    await sendAudioFile(conn, from, mek, audioData);
+    // Use the new API to download the song
+    const response = await axios.get(`https://api.giftedtech.my.id/api/download/dlmp4?apikey=gifted&url=${encodeURIComponent(url)}`);
+    const downloadUrl = response.data.download_url;
 
-    await conn.sendMessage(from, { react: { text: "✅", key: mek.key } });
-    await conn.sendMessage(from, { delete: processingMessage.key });
+    // Send audio message
+    await conn.sendMessage(from, { audio: { url: downloadUrl }, mimetype: "audio/mpeg", caption: "*© Downloaded by your bot 💚*" }, { quoted: mek });
+    await conn.sendMessage(from, { document: { url: downloadUrl }, mimetype: "audio/mpeg", fileName: deta.title + ".mp3", caption: "*© Downloaded by your bot 💚*" }, { quoted: mek });
 
-  } catch (error) {
-    console.error('Song Download Error:', error);
-    reply("❌ An error occurred while processing your request.");
-  }
+} catch (e) {
+    console.log(e);
+    reply(`${e}`);
+}
 });
 
-// Video download command
+//========video download=======
+
 cmd({
-  pattern: "video",
-  alias: ["video2"],
-  react: '🎥',
-  desc: "Download video from YouTube by searching for keywords",
-  category: "video",
-  use: ".video <video name or keywords>",
-  filename: __filename
-}, async (conn, mek, msg, { from, args, reply }) => {
-  try {
-    if (!args.length) return reply("*Please provide a video name or keywords to search for.*");
-    
-    const searchQuery = args.join(" ");
-    const processingMessage = await sendProcessingMessage(conn, from, searchQuery, "Video");
+    pattern: "video",
+    react: "🎥",
+    desc: "download video",
+    category: "download",
+    filename: __filename
+},
+async(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
+try {
+    if (!q) return reply("❌Please give me url or title");
+    const search = await yts(q);
+    const deta = search.videos[0];
+    const url = deta.url;
 
-    const video = await getFirstVideoResult(searchQuery);
-    if (!video) return reply(`❌ No results found for "${searchQuery}".`);
+    let desc = `Downloading this video - 
+*${deta.title} 💚*`;
 
-    const videoData = await fetchVideoData(video.url);
-    if (!videoData) return reply(`❌ Failed to fetch video for "${searchQuery}".`);
+    await conn.sendMessage(from, { image: { url: deta.thumbnail }, caption: desc }, { quoted: mek });
 
-    await sendVideoDetails(conn, from, videoData);
-    await sendVideoFile(conn, from, mek, videoData);
+    // Use the new API to download the video
+    const response = await axios.get(`https://api.giftedtech.my.id/api/download/dlmp4?apikey=gifted&url=${encodeURIComponent(url)}`);
+    const downloadUrl = response.data.download_url;
 
-    await conn.sendMessage(from, { react: { text: "✅", key: mek.key } });
-    await conn.sendMessage(from, { delete: processingMessage.key });
+    // Send video message
+    await conn.sendMessage(from, { video: { url: downloadUrl }, mimetype: "video/mp4", caption: "*© Downloaded by your bot 💚*" }, { quoted: mek });
+    await conn.sendMessage(from, { document: { url: downloadUrl }, mimetype: "video/mp4", fileName: deta.title + ".mp4", caption: "*© Downloaded by your bot 💚*" }, { quoted: mek });
 
-  } catch (error) {
-    console.error('Video Download Error:', error);
-    reply("❌ An error occurred while processing your request.");
-  }
+} catch (e) {
+    console.log(e);
+    reply(`${e}`);
+}
 });
 
-// Helper Functions
-async function sendProcessingMessage(conn, from, query, type) {
-  return await conn.sendMessage(from, {
-    text: `*${type === "Music" ? "🎵" : "🎬"} Processing Your Request...*\n\n_Searching and downloading your ${type.toLowerCase()}..._`,
-    contextInfo: {
-      externalAdReply: {
-        title: `YouTube ${type} Downloader`,
-        body: `Search Query: ${query}`,
-        thumbnail: type === "Music" 
-          ? "https://i.ibb.co/vxvZW7N/yt-music.png"
-          : "https://i.ibb.co/M8W0JNw/yt-video.png",
-        mediaType: 1,
-        showAdAttribution: true
-      }
-    }
-  });
-}
-
-async function getFirstVideoResult(query) {
-  const results = await yts(query);
-  return results.videos?.[0];
-}
-
-async function fetchAudioData(url) {
-  try {
-    const response = await axios.get(`https://api.giftedtech.my.id/api/download/dlmp4?apikey=gifted&url=${url}`);
-    return response.data?.success !== false ? response.data.result : null;
-  } catch (error) {
-    console.error('Audio Fetch Error:', error);
-    return null;
-  }
-}
-
-async function fetchVideoData(url) {
-  try {
-    const response = await axios.get(`https://api.giftedtech.my.id/api/download/dlmp4?apikey=gifted&url=${url}`);
-    return response.data?.success !== false ? response.data.result : null;
-  } catch (error) {
-    console.error('Video Fetch Error:', error);
-    return null;
-  }
-}
-
-async function sendAudioDetails(conn, from, audioData) {
-  await conn.sendMessage(from, {
-    image: { url: audioData.thumbnail },
-    caption: `*🎵 Song Details*\n\n*Title:* ${audioData.title}\n*Quality:* ${audioData.quality}\n*Type:* ${audioData.type}\n\n_Downloading your song, please wait..._`
-  });
-}
-
-async function sendVideoDetails(conn, from, videoData) {
-  await conn.sendMessage(from, {
-    image: { url: videoData.thumbnail },
-    caption: `*🎬 Video Details*\n\n*Title:* ${videoData.title}\n*Quality:* ${videoData.quality}\n*Type:* ${videoData.type}\n\n_Downloading your video, please wait..._`
-  });
-}
-
-async function sendAudioFile(conn, from, mek, audioData) {
-  await conn.sendMessage(from, {
-    audio: { url: audioData.download_url },
-    mimetype: 'audio/mp4',
-    fileName: `${audioData.title}.mp3`,
-    contextInfo: {
-      externalAdReply: {
-        title: audioData.title,
-        thumbnail: audioData.thumbnail,
-        mediaType: 1,
-        showAdAttribution: true
-      }
-    }
-  }, { quoted: mek });
-}
-
-async function sendVideoFile(conn, from, mek, videoData) {
-  await conn.sendMessage(from, {
-    video: { url: videoData.download_url },
-    mimetype: 'video/mp4',
-    fileName: `${videoData.title}.mp4`,
-    caption: `*✅ Download Completed*\n\n*Title:* ${videoData.title}`,
-    contextInfo: {
-      externalAdReply: {
-        title: videoData.title,
-        thumbnail: videoData.thumbnail,
-        mediaType: 1,
-        showAdAttribution: true
-      }
-    }
-  }, { quoted: mek });
-}
-
-
-
+// Add aliases for commands
+commands.song.alias = ["song2"];
+commands.video.alias = ["video2"];
 
 
 
