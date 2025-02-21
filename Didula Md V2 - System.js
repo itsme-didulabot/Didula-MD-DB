@@ -15,6 +15,7 @@ const path = require('path')
 
 cmd({
   pattern: "song",
+alias: ["song2"],
   react: '🎶',
   desc: "Download audio from YouTube by searching for keywords",
   category: "music",
@@ -93,6 +94,7 @@ cmd({
 
 cmd({
   pattern: "video",
+alias: ["video2"],
   react: '🎥',
   desc: "Download video from YouTube by searching for keywords",
   category: "video",
