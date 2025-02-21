@@ -29,10 +29,7 @@ async(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, send
         const query = String(q);
         const searchResponse = await axios.get(`https://ipa-oya.vercel.app/api/ph?q=${encodeURIComponent(query)}`);
 
-        if (!searchResponse.data || !searchResponse.data.title) {
-            return reply("❌ No results found! Please try another search.");
-        }
-
+        
         const deta = searchResponse.data;
         const videoUrl = deta.url;
 
