@@ -20,151 +20,156 @@ cmd({
   react: '🎶',
   desc: "Download audio from YouTube by searching for keywords",
   category: "music",
-  use: ".play1 <song name or keywords>",
+  use: ".song <song name or keywords>",
   filename: __filename
 }, async (conn, mek, msg, { from, args, reply }) => {
   try {
+    if (!args.length) return reply("*Please provide a song name or keywords to search for.*");
+    
     const searchQuery = args.join(" ");
-    if (!searchQuery) {
-      return reply("*Please provide a song name or keywords to search for.*");
-    }
+    const processingMessage = await sendProcessingMessage(conn, from, searchQuery, "Music");
 
-    const processingMessage = await conn.sendMessage(from, {
-      text: "*🎵 Processing Your Request...*\n\n_Searching and downloading your song..._",
-      contextInfo: {
-        externalAdReply: {
-          title: "YouTube Music Downloader",
-          body: `Search Query: ${searchQuery}`,
-          thumbnail: "https://i.ibb.co/vxvZW7N/yt-music.png",
-          mediaType: 1,
-          showAdAttribution: true
-        }
-      }
-    });
+    const video = await getFirstVideoResult(searchQuery);
+    if (!video) return reply(`❌ No results found for "${searchQuery}".`);
 
-    const searchResults = await yts(searchQuery);
-    if (!searchResults.videos || searchResults.videos.length === 0) {
-      return reply(`❌ No results found for "${searchQuery}".`);
-    }
+    const audioData = await fetchAudioData(video.url);
+    if (!audioData) return reply(`❌ Failed to fetch audio for "${searchQuery}".`);
 
-    const video = searchResults.videos[0];
-    const apiUrl = `https://api.giftedtech.my.id/api/download/dlmp4?apikey=gifted&url=${video.url}`;
-    const response = await axios.get(apiUrl);
-
-    if (!response.data || !response.data.success === false) {
-      return reply(`❌ Failed to fetch audio for "${searchQuery}".`);
-    }
-
-    const songData = response.data.result;
-
-    await conn.sendMessage(from, {
-      image: { url: songData.thumbnail },
-      caption: `*🎵 Song Details*\n\n` +
-        `*Title:* ${songData.title}\n` +
-        `*Quality:* ${songData.quality}\n` +
-        `*Type:* ${songData.type}\n\n` +
-        `_Downloading your song, please wait..._`
-    });
-
-    await conn.sendMessage(from, {
-      audio: { url: songData.download_url },
-      mimetype: 'audio/mp4',
-      fileName: `${songData.title}.mp3`,
-      contextInfo: {
-        externalAdReply: {
-          title: songData.title,
-          thumbnail: songData.thumbnail,
-          mediaType: 1,
-          showAdAttribution: true
-        }
-      }
-    }, { quoted: mek });
+    await sendAudioDetails(conn, from, audioData);
+    await sendAudioFile(conn, from, mek, audioData);
 
     await conn.sendMessage(from, { react: { text: "✅", key: mek.key } });
     await conn.sendMessage(from, { delete: processingMessage.key });
 
   } catch (error) {
-    console.error(error);
+    console.error('Song Download Error:', error);
     reply("❌ An error occurred while processing your request.");
   }
 });
 
+// Video download command
 cmd({
   pattern: "video",
   alias: ["video2"],
   react: '🎥',
   desc: "Download video from YouTube by searching for keywords",
   category: "video",
-  use: ".play2 <video name or keywords>",
+  use: ".video <video name or keywords>",
   filename: __filename
 }, async (conn, mek, msg, { from, args, reply }) => {
   try {
+    if (!args.length) return reply("*Please provide a video name or keywords to search for.*");
+    
     const searchQuery = args.join(" ");
-    if (!searchQuery) {
-      return reply("*Please provide a video name or keywords to search for.*");
-    }
+    const processingMessage = await sendProcessingMessage(conn, from, searchQuery, "Video");
 
-    const processingMessage = await conn.sendMessage(from, {
-      text: "*🎬 Processing Your Request...*\n\n_Searching and downloading your video..._",
-      contextInfo: {
-        externalAdReply: {
-          title: "YouTube Video Downloader",
-          body: `Search Query: ${searchQuery}`,
-          thumbnail: "https://i.ibb.co/M8W0JNw/yt-video.png",
-          mediaType: 1,
-          showAdAttribution: true
-        }
-      }
-    });
+    const video = await getFirstVideoResult(searchQuery);
+    if (!video) return reply(`❌ No results found for "${searchQuery}".`);
 
-    const searchResults = await yts(searchQuery);
-    if (!searchResults.videos || searchResults.videos.length === 0) {
-      return reply(`❌ No results found for "${searchQuery}".`);
-    }
+    const videoData = await fetchVideoData(video.url);
+    if (!videoData) return reply(`❌ Failed to fetch video for "${searchQuery}".`);
 
-    const video = searchResults.videos[0];
-    const apiUrl = `https://api.giftedtech.my.id/api/download/dlmp4?apikey=gifted&url=${video.url}`;
-    const response = await axios.get(apiUrl);
-
-    if (!response.data || !response.data.success === false) {
-      return reply(`❌ Failed to fetch video for "${searchQuery}".`);
-    }
-
-    const videoData = response.data.result;
-
-    await conn.sendMessage(from, {
-      image: { url: videoData.thumbnail },
-      caption: `*🎬 Video Details*\n\n` +
-        `*Title:* ${videoData.title}\n` +
-        `*Quality:* ${videoData.quality}\n` +
-        `*Type:* ${videoData.type}\n\n` +
-        `_Downloading your video, please wait..._`
-    });
-
-    await conn.sendMessage(from, {
-      video: { url: videoData.download_url },
-      mimetype: 'video/mp4',
-      fileName: `${videoData.title}.mp4`,
-      caption: `*✅ Download Completed*\n\n*Title:* ${videoData.title}`,
-      contextInfo: {
-        externalAdReply: {
-          title: videoData.title,
-          thumbnail: videoData.thumbnail,
-          mediaType: 1,
-          showAdAttribution: true
-        }
-      }
-    }, { quoted: mek });
+    await sendVideoDetails(conn, from, videoData);
+    await sendVideoFile(conn, from, mek, videoData);
 
     await conn.sendMessage(from, { react: { text: "✅", key: mek.key } });
     await conn.sendMessage(from, { delete: processingMessage.key });
 
   } catch (error) {
-    console.error(error);
+    console.error('Video Download Error:', error);
     reply("❌ An error occurred while processing your request.");
   }
 });
 
+// Helper Functions
+async function sendProcessingMessage(conn, from, query, type) {
+  return await conn.sendMessage(from, {
+    text: `*${type === "Music" ? "🎵" : "🎬"} Processing Your Request...*\n\n_Searching and downloading your ${type.toLowerCase()}..._`,
+    contextInfo: {
+      externalAdReply: {
+        title: `YouTube ${type} Downloader`,
+        body: `Search Query: ${query}`,
+        thumbnail: type === "Music" 
+          ? "https://i.ibb.co/vxvZW7N/yt-music.png"
+          : "https://i.ibb.co/M8W0JNw/yt-video.png",
+        mediaType: 1,
+        showAdAttribution: true
+      }
+    }
+  });
+}
+
+async function getFirstVideoResult(query) {
+  const results = await yts(query);
+  return results.videos?.[0];
+}
+
+async function fetchAudioData(url) {
+  try {
+    const response = await axios.get(`https://api.giftedtech.my.id/api/download/dlmp4?apikey=gifted&url=${url}`);
+    return response.data?.success !== false ? response.data.result : null;
+  } catch (error) {
+    console.error('Audio Fetch Error:', error);
+    return null;
+  }
+}
+
+async function fetchVideoData(url) {
+  try {
+    const response = await axios.get(`https://api.giftedtech.my.id/api/download/dlmp4?apikey=gifted&url=${url}`);
+    return response.data?.success !== false ? response.data.result : null;
+  } catch (error) {
+    console.error('Video Fetch Error:', error);
+    return null;
+  }
+}
+
+async function sendAudioDetails(conn, from, audioData) {
+  await conn.sendMessage(from, {
+    image: { url: audioData.thumbnail },
+    caption: `*🎵 Song Details*\n\n*Title:* ${audioData.title}\n*Quality:* ${audioData.quality}\n*Type:* ${audioData.type}\n\n_Downloading your song, please wait..._`
+  });
+}
+
+async function sendVideoDetails(conn, from, videoData) {
+  await conn.sendMessage(from, {
+    image: { url: videoData.thumbnail },
+    caption: `*🎬 Video Details*\n\n*Title:* ${videoData.title}\n*Quality:* ${videoData.quality}\n*Type:* ${videoData.type}\n\n_Downloading your video, please wait..._`
+  });
+}
+
+async function sendAudioFile(conn, from, mek, audioData) {
+  await conn.sendMessage(from, {
+    audio: { url: audioData.download_url },
+    mimetype: 'audio/mp4',
+    fileName: `${audioData.title}.mp3`,
+    contextInfo: {
+      externalAdReply: {
+        title: audioData.title,
+        thumbnail: audioData.thumbnail,
+        mediaType: 1,
+        showAdAttribution: true
+      }
+    }
+  }, { quoted: mek });
+}
+
+async function sendVideoFile(conn, from, mek, videoData) {
+  await conn.sendMessage(from, {
+    video: { url: videoData.download_url },
+    mimetype: 'video/mp4',
+    fileName: `${videoData.title}.mp4`,
+    caption: `*✅ Download Completed*\n\n*Title:* ${videoData.title}`,
+    contextInfo: {
+      externalAdReply: {
+        title: videoData.title,
+        thumbnail: videoData.thumbnail,
+        mediaType: 1,
+        showAdAttribution: true
+      }
+    }
+  }, { quoted: mek });
+}
 
 
 
