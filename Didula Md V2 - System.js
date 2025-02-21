@@ -2,14 +2,15 @@
 
 
 const { cmd, commands } = require('../lib/command');
-const config = require('../settings');
-const si = require('systeminformation');
-const pdfUrl = "https://i.ibb.co/tC37Q7B/20241220-122443.jpg";
+const scraper = require("../lib/scraperd");
+const axios = require('axios');
+const fetch = require('node-fetch');
+const { fetchJson, getBuffer } = require('../lib/functions');
+const { lookup } = require('mime-types');
 const fs = require('fs');
-const path = require('path')
-
-
-
+const path = require('path');
+const yts = require('yt-search'); // For YouTube search
+const cheerio = require('cheerio'); // Import cheerio for HTML parsing
 
 
 
