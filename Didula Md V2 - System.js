@@ -316,7 +316,7 @@ async (conn, mek, m, { from, reply }) => {
 });
 
 cmd({
-    pattern: "Didula",
+    pattern: "didula",
     desc: "Displays a dynamic edit msg for fun.",
     category: "tools",
     react: "🗿",
