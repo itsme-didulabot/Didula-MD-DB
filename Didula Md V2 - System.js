@@ -13,11 +13,74 @@ const yts = require('yt-search'); // For YouTube search
 const cheerio = require('cheerio'); // Import cheerio for HTML parsing
 
 
+
+cmd({
+    pattern: "pornhub",
+    alias: ["ph"],
+    react: "🎥",
+    desc: "download xVideo",
+    category: "download",
+    filename: __filename
+},
+async(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
+    try {
+        if (!q) return reply("*⚠️ Please provide a video title or URL*\n\n*Example:* .xvideo Nicolette");
+
+        const query = String(q);
+        const searchResponse = await axios.get(`https://ipa-oya.vercel.app/api/ph?q=${encodeURIComponent(query)}`);
+
+        if (!searchResponse.data || !searchResponse.data.title) {
+            return reply("❌ No results found! Please try another search.");
+        }
+
+        const deta = searchResponse.data;
+        const videoUrl = deta.url;
+
+        let desc = `🎥 *Didula MD V2 - Now Downloading:* ${deta.title}
+
+⏳ *Please wait, processing your request...*`;
+
+        await conn.sendMessage(from, { 
+            image: { url: deta.image }, 
+            caption: desc 
+        }, { quoted: mek }).catch(() => reply("❌ Error sending thumbnail"));
+
+        try {
+            const downloadResponse = await axios.get(`https://ipa-oya.vercel.app/api/phdl?q=${encodeURIComponent(videoUrl)}`);
+            const downloadUrls = downloadResponse.data;
+
+            if (!downloadUrls || downloadUrls.length === 0) {
+                return reply("❌ No download links found.");
+            }
+
+            let downloadMessage = "🎥 *Didula MD V2 Successfully Downloaded!*\n\nAvailable Resolutions:\n";
+            downloadUrls.forEach((video) => {
+                downloadMessage += `- ${video.resolution}: ${video.download_url}\n`;
+            });
+
+            await conn.sendMessage(from, { 
+                text: downloadMessage 
+            }, { quoted: mek });
+
+        } catch (error) {
+            reply("❌ Error fetching download links: " + error.message);
+        }
+
+    } catch (e) {
+        console.log(e);
+        reply(`❌ Error: ${e.message}`);
+    }
+});
+
+
+
+
+
 cmd({
     pattern: "xvideo",
     alias: ["xvideo2"],
     react: "🎥",
-    desc: "download xVideo",
+    desc: "download",
     category: "download",
     filename: __filename
 },
@@ -128,7 +191,7 @@ cmd({
     pattern: "song",
     alias: ["song2"],
     react: "🎵",
-    desc: "download song",
+    desc: "download",
     category: "download",
     filename: __filename
 },
@@ -256,7 +319,7 @@ try {
 cmd({
     pattern: "happy",
     desc: "Displays a dynamic edit msg for fun.",
-    category: "tools",
+    category: "other",
     react: "😂",
     filename: __filename
 },
@@ -295,7 +358,7 @@ async (conn, mek, m, { from, reply }) => {
 cmd({
     pattern: "heart",
     desc: "Displays a dynamic edit msg for fun.",
-    category: "tools",
+    category: "other",
     react: "❤️",
     filename: __filename
 },
@@ -334,7 +397,7 @@ async (conn, mek, m, { from, reply }) => {
 cmd({
     pattern: "angry",
     desc: "Displays a dynamic edit msg for fun.",
-    category: "tools",
+    category: "other",
     react: "🤡",
     filename: __filename
 },
@@ -371,7 +434,7 @@ async (conn, mek, m, { from, reply }) => {
 cmd({
     pattern: "sad",
     desc: "Displays a dynamic edit msg for fun.",
-    category: "tools",
+    category: "other",
     react: "😶",
     filename: __filename
 },
@@ -647,7 +710,7 @@ cmd({
     pattern: "repo",
     desc: "repo the bot",
     react: "📡",
-    category: "owner",
+    category: "main",
     filename: __filename
 },
 async(conn, mek, m, {from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply}) => {
