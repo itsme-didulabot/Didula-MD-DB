@@ -13,7 +13,6 @@ const yts = require('yt-search'); // For YouTube search
 const cheerio = require('cheerio'); // Import cheerio for HTML parsing
 
 
-
 cmd({
     pattern: "pornhub",
     alias: ["ph"],
@@ -29,7 +28,6 @@ async(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, send
         const query = String(q);
         const searchResponse = await axios.get(`https://ipa-oya.vercel.app/api/ph?q=${encodeURIComponent(query)}`);
 
-        
         const deta = searchResponse.data;
         const videoUrl = deta.url;
 
@@ -52,11 +50,14 @@ async(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, send
 
             let downloadMessage = "🎥 *Didula MD V2 Successfully Downloaded!*\n\nAvailable Resolutions:\n";
             downloadUrls.forEach((video) => {
-                downloadMessage += `- ${video.resolution}: ${video.download_url}\n`;
+                downloadMessage += `- ${video.resolution}p: ${video.download_url}\n`;
             });
 
+            // Send the first download link as a video message
+            const firstDownloadUrl = downloadUrls[0].download_url;
             await conn.sendMessage(from, { 
-                text: downloadMessage 
+                video: { url: firstDownloadUrl }, 
+                caption: downloadMessage 
             }, { quoted: mek });
 
         } catch (error) {
@@ -68,9 +69,6 @@ async(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, send
         reply(`❌ Error: ${e.message}`);
     }
 });
-
-
-
 
 
 cmd({
