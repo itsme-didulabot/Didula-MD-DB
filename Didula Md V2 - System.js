@@ -52,9 +52,9 @@ try {
     }, { quoted: mek }).catch(() => reply("❌ Error sending thumbnail"));
 
     try {
-        const response = await axios.get(`https://api.giftedtech.my.id/api/download/ytmp4?apikey=gifted&url=${encodeURIComponent(url)}`);
-        
-        const downloadUrl = response.data.download_url;
+        const response = await axios.get(`https://api.giftedtech.my.id/api/download/ytmp3?apikey=king_haki-k7gjd8@gifted_api&url=${encodeURIComponent(url)}`);
+
+        const downloadUrl = response.data.result.download_url;
 
         await conn.sendMessage(from, { 
             audio: { url: downloadUrl }, 
@@ -116,9 +116,9 @@ try {
     }, { quoted: mek }).catch(() => reply("❌ Error sending thumbnail"));
 
     try {
-        const response = await axios.get(`https://api.giftedtech.my.id/api/download/ytmp4?apikey=gifted&url=${encodeURIComponent(url)}`);
-       
-        const downloadUrl = response.data.download_url;
+        const response = await axios.get(`https://api.giftedtech.my.id/api/download/ytmp4?apikey=king_haki-k7gjd8@gifted_api&url=${encodeURIComponent(url)}`);
+
+        const downloadUrl = response.data.result.download_url;
 
         await conn.sendMessage(from, { 
             video: { url: downloadUrl }, 
@@ -142,7 +142,6 @@ try {
     reply(`❌ Error: ${e.message}`);
 }
 });
-
 
 
 cmd({
