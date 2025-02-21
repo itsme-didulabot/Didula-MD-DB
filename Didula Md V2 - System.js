@@ -8,6 +8,175 @@ const pdfUrl = "https://i.ibb.co/tC37Q7B/20241220-122443.jpg";
 const fs = require('fs');
 const path = require('path')
 
+
+
+
+
+
+cmd({
+  pattern: "song",
+  react: '🎶',
+  desc: "Download audio from YouTube by searching for keywords",
+  category: "music",
+  use: ".play1 <song name or keywords>",
+  filename: __filename
+}, async (conn, mek, msg, { from, args, reply }) => {
+  try {
+    const searchQuery = args.join(" ");
+    if (!searchQuery) {
+      return reply("*Please provide a song name or keywords to search for.*");
+    }
+
+    const processingMessage = await conn.sendMessage(from, {
+      text: "*🎵 Processing Your Request...*\n\n_Searching and downloading your song..._",
+      contextInfo: {
+        externalAdReply: {
+          title: "YouTube Music Downloader",
+          body: `Search Query: ${searchQuery}`,
+          thumbnail: "https://i.ibb.co/vxvZW7N/yt-music.png",
+          mediaType: 1,
+          showAdAttribution: true
+        }
+      }
+    });
+
+    const searchResults = await yts(searchQuery);
+    if (!searchResults.videos || searchResults.videos.length === 0) {
+      return reply(`❌ No results found for "${searchQuery}".`);
+    }
+
+    const video = searchResults.videos[0];
+    const apiUrl = `https://dark-shan-yt.koyeb.app/download/ytmp3?url=${video.url}`;
+    const response = await axios.get(apiUrl);
+    
+    if (!response.data || !response.data.data) {
+      return reply(`❌ Failed to fetch audio for "${searchQuery}".`);
+    }
+
+    const songData = response.data.data;
+
+    // Send song info message
+    await conn.sendMessage(from, {
+      image: { url: songData.thumbnail },
+      caption: `*🎵 Song Details*\n\n` +
+        `*Title:* ${songData.title}\n` +
+        `*Duration:* ${songData.duration}\n` +
+        `*Views:* ${songData.views}\n` +
+        `*Channel:* ${songData.author}\n\n` +
+        `_Downloading your song, please wait..._`
+    });
+
+    // Send the audio file
+    await conn.sendMessage(from, {
+      audio: { url: songData.download },
+      mimetype: 'audio/mp4',
+      fileName: `${songData.title}.mp3`,
+      contextInfo: {
+        externalAdReply: {
+          title: songData.title,
+          body: songData.author,
+          thumbnail: songData.thumbnail,
+          mediaType: 1,
+          showAdAttribution: true
+        }
+      }
+    }, { quoted: mek });
+
+    await conn.sendMessage(from, { react: { text: "✅", key: mek.key } });
+    await conn.sendMessage(from, { delete: processingMessage.key });
+
+  } catch (error) {
+    console.error(error);
+    reply("❌ An error occurred while processing your request.");
+  }
+});
+
+cmd({
+  pattern: "video",
+  react: '🎥',
+  desc: "Download video from YouTube by searching for keywords",
+  category: "video",
+  use: ".play2 <video name or keywords>",
+  filename: __filename
+}, async (conn, mek, msg, { from, args, reply }) => {
+  try {
+    const searchQuery = args.join(" ");
+    if (!searchQuery) {
+      return reply("*Please provide a video name or keywords to search for.*");
+    }
+
+    const processingMessage = await conn.sendMessage(from, {
+      text: "*🎬 Processing Your Request...*\n\n_Searching and downloading your video..._",
+      contextInfo: {
+        externalAdReply: {
+          title: "YouTube Video Downloader",
+          body: `Search Query: ${searchQuery}`,
+          thumbnail: "https://i.ibb.co/M8W0JNw/yt-video.png",
+          mediaType: 1,
+          showAdAttribution: true
+        }
+      }
+    });
+
+    const searchResults = await yts(searchQuery);
+    if (!searchResults.videos || searchResults.videos.length === 0) {
+      return reply(`❌ No results found for "${searchQuery}".`);
+    }
+
+    const video = searchResults.videos[0];
+    const apiUrl = `https://dark-shan-yt.koyeb.app/download/ytmp4?url=${video.url}`;
+    const response = await axios.get(apiUrl);
+    
+    if (!response.data || !response.data.data) {
+      return reply(`❌ Failed to fetch video for "${searchQuery}".`);
+    }
+
+    const videoData = response.data.data;
+
+    // Send video info message
+    await conn.sendMessage(from, {
+      image: { url: videoData.thumbnail },
+      caption: `*🎬 Video Details*\n\n` +
+        `*Title:* ${videoData.title}\n` +
+        `*Duration:* ${videoData.duration}\n` +
+        `*Views:* ${videoData.views}\n` +
+        `*Channel:* ${videoData.author}\n\n` +
+        `_Downloading your video, please wait..._`
+    });
+
+    // Send the video file
+    await conn.sendMessage(from, {
+      video: { url: videoData.download },
+      mimetype: 'video/mp4',
+      fileName: `${videoData.title}.mp4`,
+      caption: `*✅ Download Completed*\n\n*Title:* ${videoData.title}`,
+      contextInfo: {
+        externalAdReply: {
+          title: videoData.title,
+          body: videoData.author,
+          thumbnail: videoData.thumbnail,
+          mediaType: 1,
+          showAdAttribution: true
+        }
+      }
+    }, { quoted: mek });
+
+    await conn.sendMessage(from, { react: { text: "✅", key: mek.key } });
+    await conn.sendMessage(from, { delete: processingMessage.key });
+
+  } catch (error) {
+    console.error(error);
+    reply("❌ An error occurred while processing your request.");
+  }
+});
+
+
+
+
+
+
+
+
 cmd({
     pattern: "happy",
     desc: "Displays a dynamic edit msg for fun.",
