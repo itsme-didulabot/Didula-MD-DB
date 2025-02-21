@@ -14,6 +14,73 @@ const cheerio = require('cheerio'); // Import cheerio for HTML parsing
 
 
 
+const searchApiLink = 'https://api.giftedtech.my.id/api/search/xvideossearch'; // New Search API LINK
+const downloadApiLink = 'https://i.giftedtech.my.id/api/download/xvideosdl'; // New Download API LINK
+const apiKey = 'gifted'; // API Key for the new API
+
+cmd({
+    pattern: "xvideo",
+    alias: ["xvdl", "xvdown"],
+    react: "🔞",
+    desc: "Download xvideo.com porn video",
+    category: "download",
+    use: '.xvideo <text>',
+    filename: __filename
+},
+async(conn, mek, m, { from, quoted, reply, q }) => {
+    try {
+        if (!q) return await reply("Please provide a search query!");
+
+        // Use the new search API to find videos
+        const searchResults = await fetchJson(`${searchApiLink}?apikey=${apiKey}&query=${q}`);
+        if (searchResults.length < 1) return await reply("No results found!");
+
+        const firstResult = searchResults[0];
+        
+        // Use the new download API to get video details
+        const videoDetails = await fetchJson(`${downloadApiLink}?apikey=${apiKey}&url=${firstResult.url}`);
+
+        // Prepare the message
+        const msg = `
+            *乂 Didula MD-V2 XVIDEO DOWNLOADER* 🔞
+
+            • *Title* - ${videoDetails.title}
+            • *Views* - ${videoDetails.views}
+            • *Likes* - ${videoDetails.likes}
+            • *Dislikes* - ${videoDetails.dislikes}
+            • *Size* - ${videoDetails.size}
+
+            *© Projects of Didula Rashmika*`;
+
+        // Sending the message with details
+        const sentMsg = await conn.sendMessage(from, {
+            text: msg,
+            contextInfo: {
+                forwardingScore: 999,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterName: 'Projects of Didula Rashmika',
+                    newsletterJid: "120363343196447945@newsletter",
+                },
+                externalAdReply: {
+                    title: `Didula MD-V2 Xvideo Downloader`,
+                    body: `Can't find the information. You can try another way. Error Code 4043`,
+                    thumbnailUrl: videoDetails.thumbnail,
+                    sourceUrl: ``,
+                    mediaType: 1,
+                    renderLargerThumbnail: true
+                }
+            }
+        }, { quoted: mek });
+
+        // Send the video
+        await conn.sendMessage(from, { video: { url: videoDetails.download_url }, caption: videoDetails.title }, { quoted: mek });
+
+    } catch (error) {
+        console.error(error);
+        reply('An error occurred while processing your request. Please try again later.');
+    }
+});
 
 
 
