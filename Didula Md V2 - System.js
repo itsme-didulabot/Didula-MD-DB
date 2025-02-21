@@ -53,9 +53,7 @@ try {
 
     try {
         const response = await axios.get(`https://api.giftedtech.my.id/api/download/ytmp4?apikey=gifted&url=${encodeURIComponent(url)}`);
-        if (!response.data || !response.data.download_url) {
-            throw new Error("❌ Invalid download URL");
-        }
+        
         const downloadUrl = response.data.download_url;
 
         await conn.sendMessage(from, { 
@@ -119,9 +117,7 @@ try {
 
     try {
         const response = await axios.get(`https://api.giftedtech.my.id/api/download/ytmp4?apikey=gifted&url=${encodeURIComponent(url)}`);
-        if (!response.data || !response.data.download_url) {
-            throw new Error("❌ Invalid download URL");
-        }
+       
         const downloadUrl = response.data.download_url;
 
         await conn.sendMessage(from, { 
