@@ -15,7 +15,7 @@ const path = require('path')
 
 cmd({
   pattern: "song",
-alias: ["song2"],
+  alias: ["song2"],
   react: '🎶',
   desc: "Download audio from YouTube by searching for keywords",
   category: "music",
@@ -47,35 +47,31 @@ alias: ["song2"],
     }
 
     const video = searchResults.videos[0];
-    const apiUrl = `https://dark-shan-yt.koyeb.app/download/ytmp3?url=${video.url}`;
+    const apiUrl = `https://api.giftedtech.my.id/api/download/dlmp4?apikey=gifted&url=${video.url}`;
     const response = await axios.get(apiUrl);
-    
-    if (!response.data || !response.data.data) {
+
+    if (!response.data || !response.data.success === false) {
       return reply(`❌ Failed to fetch audio for "${searchQuery}".`);
     }
 
-    const songData = response.data.data;
+    const songData = response.data.result;
 
-    // Send song info message
     await conn.sendMessage(from, {
       image: { url: songData.thumbnail },
       caption: `*🎵 Song Details*\n\n` +
         `*Title:* ${songData.title}\n` +
-        `*Duration:* ${songData.duration}\n` +
-        `*Views:* ${songData.views}\n` +
-        `*Channel:* ${songData.author}\n\n` +
+        `*Quality:* ${songData.quality}\n` +
+        `*Type:* ${songData.type}\n\n` +
         `_Downloading your song, please wait..._`
     });
 
-    // Send the audio file
     await conn.sendMessage(from, {
-      audio: { url: songData.download },
+      audio: { url: songData.download_url },
       mimetype: 'audio/mp4',
       fileName: `${songData.title}.mp3`,
       contextInfo: {
         externalAdReply: {
           title: songData.title,
-          body: songData.author,
           thumbnail: songData.thumbnail,
           mediaType: 1,
           showAdAttribution: true
@@ -94,7 +90,7 @@ alias: ["song2"],
 
 cmd({
   pattern: "video",
-alias: ["video2"],
+  alias: ["video2"],
   react: '🎥',
   desc: "Download video from YouTube by searching for keywords",
   category: "video",
@@ -126,36 +122,32 @@ alias: ["video2"],
     }
 
     const video = searchResults.videos[0];
-    const apiUrl = `https://dark-shan-yt.koyeb.app/download/ytmp4?url=${video.url}`;
+    const apiUrl = `https://api.giftedtech.my.id/api/download/dlmp4?apikey=gifted&url=${video.url}`;
     const response = await axios.get(apiUrl);
-    
-    if (!response.data || !response.data.data) {
+
+    if (!response.data || !response.data.success === false) {
       return reply(`❌ Failed to fetch video for "${searchQuery}".`);
     }
 
-    const videoData = response.data.data;
+    const videoData = response.data.result;
 
-    // Send video info message
     await conn.sendMessage(from, {
       image: { url: videoData.thumbnail },
       caption: `*🎬 Video Details*\n\n` +
         `*Title:* ${videoData.title}\n` +
-        `*Duration:* ${videoData.duration}\n` +
-        `*Views:* ${videoData.views}\n` +
-        `*Channel:* ${videoData.author}\n\n` +
+        `*Quality:* ${videoData.quality}\n` +
+        `*Type:* ${videoData.type}\n\n` +
         `_Downloading your video, please wait..._`
     });
 
-    // Send the video file
     await conn.sendMessage(from, {
-      video: { url: videoData.download },
+      video: { url: videoData.download_url },
       mimetype: 'video/mp4',
       fileName: `${videoData.title}.mp4`,
       caption: `*✅ Download Completed*\n\n*Title:* ${videoData.title}`,
       contextInfo: {
         externalAdReply: {
           title: videoData.title,
-          body: videoData.author,
           thumbnail: videoData.thumbnail,
           mediaType: 1,
           showAdAttribution: true
