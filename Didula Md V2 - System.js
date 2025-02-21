@@ -24,7 +24,7 @@ cmd({
     pattern: "hirucheck",
     alias: ["hirunews","newshiru","hirulk"],
     react: "⭐",
-    category: "search hiru news",
+    category: "search",
     desc: "Fetch the latest news from the SUHAS API in Hiru API.",
     use: "",
     filename: __filename,
