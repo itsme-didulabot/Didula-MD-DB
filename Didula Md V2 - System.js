@@ -17,6 +17,7 @@ const cheerio = require('cheerio'); // Import cheerio for HTML parsing
 
 cmd({
     pattern: "song",
+alias: ["song2"],
     react: "🎵",
     desc: "download song",
     category: "download",
@@ -52,6 +53,7 @@ try {
 
 cmd({
     pattern: "video",
+alias: ["video2"],
     react: "🎥",
     desc: "download video",
     category: "download",
@@ -83,9 +85,6 @@ try {
 }
 });
 
-// Add aliases for commands
-commands.song.alias = ["song2"];
-commands.video.alias = ["video2"];
 
 
 
