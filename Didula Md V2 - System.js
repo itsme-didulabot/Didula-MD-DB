@@ -24,78 +24,53 @@ const xml2js = require('xml2js');
 
 cmd({
     pattern: "tostatus",
-    desc: "Send any content to status",
-    alias: ['tos'],
+    desc: "Send mentioned message to status.",
     category: "owner",
+    react: "📱",
     filename: __filename
-}, async (conn, mek, store, {
-    from,
-    quoted,
-    isOwner,
-    isMe,
-    reply
-}) => {
-    if (!isOwner && !isMe) {
-        return reply("*You Are Not Owner Or Bot*");
-    }
-
-    if (!quoted) {
-        return reply("Please reply to content you want to send to status ❌");
-    }
+},
+async (conn, mek, m, { from, isOwner, quoted, reply }) => {
+    if (!isOwner) return reply("❌ You are not the owner!");
+    if (!quoted) return reply("❌ Please reply to a message to share on status!");
 
     try {
-        const statusJidList = await conn.getStatusJidList();
-        const options = {
-            backgroundColor: '#ffffff',
-            font: 1,
-            statusJidList: statusJidList,
-            broadcast: true
-        };
+        const statusJidList = await conn.getContacts();
+        const jids = statusJidList.map(contact => contact.id);
 
         let messageContent;
-        
+        let caption = '';
+
         if (quoted.type === 'imageMessage') {
+            const media = await quoted.download();
             messageContent = {
-                image: { url: quoted.imageMessage.url },
-                caption: quoted.imageMessage.caption || ''
+                image: media,
+                caption: quoted.msg.caption || ''
             };
         } else if (quoted.type === 'videoMessage') {
+            const media = await quoted.download();
             messageContent = {
-                video: { url: quoted.videoMessage.url },
-                caption: quoted.videoMessage.caption || ''
-            };
-        } else if (quoted.type === 'audioMessage') {
-            messageContent = {
-                audio: { url: quoted.audioMessage.url },
-                mimetype: 'audio/mp4',
-                ptt: quoted.audioMessage.ptt || false
-            };
-        } else if (quoted.type === 'stickerMessage') {
-            messageContent = {
-                sticker: { url: quoted.stickerMessage.url }
-            };
-        } else if (quoted.type === 'documentMessage') {
-            messageContent = {
-                document: { url: quoted.documentMessage.url },
-                mimetype: quoted.documentMessage.mimetype,
-                fileName: quoted.documentMessage.fileName
+                video: media,
+                caption: quoted.msg.caption || ''
             };
         } else {
             messageContent = {
-                text: quoted.text || quoted.message.conversation
+                text: quoted.text
             };
         }
 
-        await conn.sendMessage('status@broadcast', messageContent, options);
-        return reply(`*Content sent to status successfully ✅*`);
+        await conn.sendMessage('status@broadcast', messageContent, {
+            backgroundColor: '#ffffff',
+            font: 1,
+            statusJidList: jids,
+            broadcast: true
+        });
+
+        reply("✅ Message sent to status successfully!");
     } catch (error) {
         console.error("Error sending status:", error);
-        return reply("Failed to send status ❌");
+        reply(`❌ Error sending status: ${error.message}`);
     }
 });
-
-
-
 
 
 
