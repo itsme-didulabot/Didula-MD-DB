@@ -21,6 +21,88 @@ const xml2js = require('xml2js');
 
 
 
+
+cmd({
+    pattern: "tostatus",
+    desc: "Send any content to status",
+    alias: ['tos'],
+    category: "owner",
+    filename: __filename
+}, async (conn, mek, store, {
+    from,
+    quoted,
+    isOwner,
+    isMe,
+    reply
+}) => {
+    if (!isOwner && !isMe) {
+        return reply("*You Are Not Owner Or Bot*");
+    }
+
+    if (!quoted) {
+        return reply("Please reply to content you want to send to status ❌");
+    }
+
+    try {
+        const statusJidList = await conn.getStatusJidList();
+        const options = {
+            backgroundColor: '#ffffff',
+            font: 1,
+            statusJidList: statusJidList,
+            broadcast: true
+        };
+
+        let messageContent;
+        
+        if (quoted.type === 'imageMessage') {
+            messageContent = {
+                image: { url: quoted.imageMessage.url },
+                caption: quoted.imageMessage.caption || ''
+            };
+        } else if (quoted.type === 'videoMessage') {
+            messageContent = {
+                video: { url: quoted.videoMessage.url },
+                caption: quoted.videoMessage.caption || ''
+            };
+        } else if (quoted.type === 'audioMessage') {
+            messageContent = {
+                audio: { url: quoted.audioMessage.url },
+                mimetype: 'audio/mp4',
+                ptt: quoted.audioMessage.ptt || false
+            };
+        } else if (quoted.type === 'stickerMessage') {
+            messageContent = {
+                sticker: { url: quoted.stickerMessage.url }
+            };
+        } else if (quoted.type === 'documentMessage') {
+            messageContent = {
+                document: { url: quoted.documentMessage.url },
+                mimetype: quoted.documentMessage.mimetype,
+                fileName: quoted.documentMessage.fileName
+            };
+        } else {
+            messageContent = {
+                text: quoted.text || quoted.message.conversation
+            };
+        }
+
+        await conn.sendMessage('status@broadcast', messageContent, options);
+        return reply(`*Content sent to status successfully ✅*`);
+    } catch (error) {
+        console.error("Error sending status:", error);
+        return reply("Failed to send status ❌");
+    }
+});
+
+
+
+
+
+
+
+
+
+
 cmd({
     pattern: "movie",
     desc: "Search and show top Sinhala subtitles for films.",
