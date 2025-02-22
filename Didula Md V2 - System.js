@@ -22,55 +22,7 @@ const xml2js = require('xml2js');
 
 
 
-cmd({
-    pattern: "tostatus",
-    desc: "Send mentioned message to status.",
-    category: "owner",
-    react: "📱",
-    filename: __filename
-},
-async (conn, mek, m, { from, isOwner, quoted, reply }) => {
-    if (!isOwner) return reply("❌ You are not the owner!");
-    if (!quoted) return reply("❌ Please reply to a message to share on status!");
 
-    try {
-        const statusJidList = await conn.getContacts();
-        const jids = statusJidList.map(contact => contact.id);
-
-        let messageContent;
-        let caption = '';
-
-        if (quoted.type === 'imageMessage') {
-            const media = await quoted.download();
-            messageContent = {
-                image: media,
-                caption: quoted.msg.caption || ''
-            };
-        } else if (quoted.type === 'videoMessage') {
-            const media = await quoted.download();
-            messageContent = {
-                video: media,
-                caption: quoted.msg.caption || ''
-            };
-        } else {
-            messageContent = {
-                text: quoted.text
-            };
-        }
-
-        await conn.sendMessage('status@broadcast', messageContent, {
-            backgroundColor: '#ffffff',
-            font: 1,
-            statusJidList: jids,
-            broadcast: true
-        });
-
-        reply("✅ Message sent to status successfully!");
-    } catch (error) {
-        console.error("Error sending status:", error);
-        reply(`❌ Error sending status: ${error.message}`);
-    }
-});
 
 
 
