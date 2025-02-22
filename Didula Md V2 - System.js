@@ -18,6 +18,167 @@ const cheerio = require('cheerio'); // Import cheerio for HTML parsing
 
 const xml2js = require('xml2js');
 
+
+
+
+cmd({
+    pattern: "movie",
+    desc: "Search and show top Sinhala subtitles for films.",
+    react: "🎬",
+    category: "download",
+    filename: __filename
+}, async (conn, mek, m, { from, q, reply }) => {
+    try {
+        if (!q || q.trim() === "") {
+            return reply("*⚠️ Please provide a movie name (E.g: .sinhalasub spider man)*");
+        }
+
+        const searchUrl = `https://www.dark-yasiya-api.site/movie/sinhalasub/search?text=${encodeURIComponent(q)}`;
+        
+        const fetchData = async (url, retries = 3) => {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await axios.get(url, { timeout: 10000 });
+                    return response.data;
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await new Promise(r => setTimeout(r, 2000));
+                }
+            }
+        };
+
+        const data = await fetchData(searchUrl);
+
+        if (!data?.result?.data?.length) {
+            return reply("*⚠️ No results found. Try including the year (E.g: .sinhalasub love 2015)*");
+        }
+
+        const topFilms = data.result.data.slice(0, 20);
+        const filmsList = topFilms.map((film, index) => {
+            return `${index + 1}. 🎬 *${film.title}*\n   ⭐ ${film.imdb} | 📅 ${film.year} | 📺 ${film.type}`;
+        }).join("\n\n");
+
+        const msg = `🎥 *Movie Search Results*\n\n🔍 *Query:* ${q}\n\n${filmsList}\n\n📝 *Reply with a number (1-${topFilms.length}) to select*`;
+
+        const sentMsg = await conn.sendMessage(from, { text: msg }, { quoted: mek });
+
+        conn.ev.once("messages.upsert", async ({ messages }) => {
+            const response = messages[0];
+            if (!response?.message) return;
+
+            const userReply = response.message.conversation || response.message.extendedTextMessage?.text;
+            const isReplyToBot = response.message.extendedTextMessage?.contextInfo?.stanzaId === sentMsg.key.id;
+
+            if (!isReplyToBot || !/^\d+$/.test(userReply)) return;
+
+            const selectedIndex = parseInt(userReply) - 1;
+            if (selectedIndex < 0 || selectedIndex >= topFilms.length) {
+                return reply("*❌ Invalid selection. Please choose a number between 1-20*");
+            }
+
+            const selectedFilm = topFilms[selectedIndex];
+            
+            try {
+                const movieDetails = await fetchData(`https://www.dark-yasiya-api.site/movie/sinhalasub/movie?url=${selectedFilm.link}`);
+                
+                if (!movieDetails?.result?.data) {
+                    throw new Error("Failed to fetch movie details");
+                }
+
+                const { data: movie } = movieDetails.result;
+
+                const detailsMsg = `🎥 *MOVIE DETAILS* 🎥
+
+*🎬 Title:* ${movie.title}
+*📅 Release:* ${movie.date || 'N/A'}
+*⭐ IMDb:* ${movie.imdbRate || 'N/A'}/10
+*⏱️ Runtime:* ${movie.runtime || 'N/A'}
+*🌍 Country:* ${movie.country || 'N/A'}
+*🎭 Genre:* ${movie.category.join(", ")}
+*👨‍💼 Director:* ${movie.director}
+
+*📝 Description:*
+${movie.description}
+
+*🎭 Cast:*
+${movie.cast.map(c => `• ${c.cast_name} (${c.reall_name})`).join("\n")}`;
+
+                await conn.sendMessage(from, {
+                    image: { url: movie.image },
+                    caption: detailsMsg
+                }, { quoted: mek });
+
+                if (movie.dl_links?.length) {
+                    const downloadOptions = `
+╭━─━─━─≪🎬≫─━─━─━╮
+│ 📥 *DOWNLOAD OPTIONS*
+│
+${movie.dl_links.map((link, index) => `│ ${index + 1}. *${link.quality}*
+│    📦 Size: ${link.size}
+│    🔗 Quality: ${link.quality}`).join('\n│\n')}
+│
+│ 📌 *Reply with number to download*
+╰━─━─━─≪🎬≫─━─━─━╯`;
+
+                    const dlMsg = await conn.sendMessage(from, { text: downloadOptions }, { quoted: mek });
+
+                    conn.ev.once("messages.upsert", async ({ messages }) => {
+                        const dlResponse = messages[0];
+                        if (!dlResponse?.message) return;
+
+                        const dlReply = dlResponse.message.conversation || dlResponse.message.extendedTextMessage?.text;
+                        const isDlReplyToBot = dlResponse.message.extendedTextMessage?.contextInfo?.stanzaId === dlMsg.key.id;
+
+                        if (!isDlReplyToBot || !/^\d+$/.test(dlReply)) return;
+
+                        const dlIndex = parseInt(dlReply) - 1;
+                        if (dlIndex < 0 || dlIndex >= movie.dl_links.length) {
+                            return reply("*❌ Invalid download option*");
+                        }
+
+                        const selectedLink = movie.dl_links[dlIndex];
+                        const modifiedLink = selectedLink.link.replace("/u/", "/api/file/");
+
+                        await conn.sendMessage(from, { react: { text: "⬇️", key: dlResponse.key }});
+
+                        await conn.sendMessage(from, {
+                            document: { url: modifiedLink },
+                            mimetype: "video/mp4",
+                            fileName: `${movie.title} [${selectedLink.quality}].mp4`,
+                            caption: `🎬 *${movie.title}*\n📊 Quality: ${selectedLink.quality}\n📦 Size: ${selectedLink.size}`
+                        }, { quoted: mek });
+
+                        await conn.sendMessage(from, { react: { text: "✅", key: dlResponse.key }});
+                    });
+                }
+
+                if (movie.images?.length) {
+                    await conn.sendMessage(from, { text: "*📸 Uploading additional images...*" });
+                    for (const imageUrl of movie.images) {
+                        await conn.sendMessage(from, {
+                            image: { url: imageUrl },
+                            caption: `🎬 *${movie.title}* - Additional Image`
+                        });
+                    }
+                }
+
+            } catch (error) {
+                reply("*❌ Failed to fetch movie details. Please try again later.*");
+                console.error(error);
+            }
+        });
+
+    } catch (error) {
+        reply("*❌ An error occurred. Please try again later.*");
+        console.error(error);
+    }
+});
+
+
+
+
+
+
 cmd({
     pattern: "itnnews",
     desc: "Get the latest ITN news headlines or details of a given link.",
