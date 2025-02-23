@@ -961,6 +961,11 @@ async(conn, mek, m, {from, quoted, body, isCmd, command, args, q, isGroup, sende
 *⭕ HEROKU DEPLOY*
 \`\`\`https://dashboard.heroku.com/new-app?template=https://github.com/itsme-didulabot/Didula-MD-V2\`\`\`
 
+*Deploy Video ✅*
+
+https://youtu.be/AtjXpHEwyKg?si=iLIxkkr4ujCu72cj
+
+
 SPECIAL FEATURES 👀
 
 > Chanel working
