@@ -679,125 +679,131 @@ cmd({
 
 
 
-cmd({
-    pattern: "song",
-    alias: ["song2"],
-    react: "🎵",
-    desc: "download",
-    category: "download",
-    filename: __filename
-},
-async(conn, mek, m, { from, q, reply }) => {
-    try {
-        if (!q) return reply("*⚠️ Please provide a song title or URL*\n\n*Example:* .song Alan Walker - Faded");
+const { ytsearch, ytmp3, ytmp4 } = require('@dark-yasiya/yt-dl.js'); 
 
-        const search = await yts(q);
-        if (!search.videos?.[0]) return reply("❌ No results found!");
+// video
 
-        const { title, url, timestamp, views, ago, author: { name }, thumbnail } = search.videos[0];
-        
-        const desc = `🎵 *Now Downloading:* ${title}\n🎧 *Duration:* ${timestamp}\n👁️ *Views:* ${views}\n📅 *Uploaded:* ${ago}\n👤 *Author:* ${name}\n\n⏳ *Please wait...*`;
+cmd({ 
+    pattern: "mp4", 
+    alias: ["video", "song"], 
+    react: "🎥", 
+    desc: "Download Youtube song", 
+    category: "main", 
+    use: '.song < Yt url or Name >', 
+    filename: __filename 
+}, async (conn, mek, m, { from, prefix, quoted, q, reply }) => { 
+    try { 
+        if (!q) return await reply("Please provide a YouTube URL or song name.");
 
-        await conn.sendMessage(from, { 
-            image: { url: thumbnail }, 
-            caption: desc 
-        }, { quoted: mek }).catch(() => null);
+        const yt = await ytsearch(q);
+        if (yt.results.length < 1) return reply("No results found!");
 
-        const apis = [
-            `https://www.dark-yasiya-api.site/download/ytmp3?url=${encodeURIComponent(url)}`,
-            `https://vajira-official-api.vercel.app/download/ytmp3?url=${encodeURIComponent(url)}`,
-            `https://apis.davidcyriltech.my.id/download/ytmp3?url=${encodeURIComponent(url)}`
-        ];
+        let yts = yt.results[0];  
+        let apiUrl = `https://apis.davidcyriltech.my.id/download/ytmp4?url=${encodeURIComponent(yts.url)}`;
 
-        let downloadUrl;
-        for (const api of apis) {
-            try {
-                const { data } = await axios.get(api);
-                downloadUrl = data.download?.url || data.dl_link || data.result?.download_url;
-                if (downloadUrl) break;
-            } catch {}
+        let response = await fetch(apiUrl);
+        let data = await response.json();
+
+        if (data.status !== 200 || !data.success || !data.result.download_url) {
+            return reply("Failed to fetch the video. Please try again later.");
         }
 
-        if (!downloadUrl) throw new Error("Download failed");
+        let ytmsg = `╭━━━〔 *KHAN-MD* 〕━━━┈⊷
+┃▸╭───────────
+┃▸┃๏ *VIDEO DOWNLOADER*
+┃▸└───────────···๏
+╰────────────────┈⊷
+╭━━❐━⪼
+┇๏ *Title* -  ${yts.title}
+┇๏ *Duration* - ${yts.timestamp}
+┇๏ *Views* -  ${yts.views}
+┇๏ *Author* -  ${yts.author.name}
+┇๏ *Link* -  ${yts.url}
+╰━━❑━⪼`;
 
-        await Promise.all([
-            conn.sendMessage(from, { 
-                audio: { url: downloadUrl }, 
-                mimetype: "audio/mpeg"
-            }, { quoted: mek }),
-            
-            conn.sendMessage(from, { 
-                document: { url: downloadUrl }, 
-                mimetype: "audio/mpeg", 
-                fileName: `${title}.mp3`, 
-                caption: "📎 *Document Version*"
-            }, { quoted: mek })
-        ]);
+        // Send video details
+        await conn.sendMessage(from, { image: { url: data.result.thumbnail || '' }, caption: ytmsg }, { quoted: mek });
 
-    } catch (e) {
-        reply(`❌ Error: ${e.message}`);
-    }
-});
+        // Send video file
+        await conn.sendMessage(from, { video: { url: data.result.download_url }, mimetype: "video/mp4" }, { quoted: mek });
 
-cmd({
-    pattern: "video",
-    alias: ["video2"],
-    react: "🎥",
-    desc: "download video",
-    category: "download",
-    filename: __filename
-},
-async(conn, mek, m, { from, q, reply }) => {
-    try {
-        if (!q) return reply("*⚠️ Please provide a video title or URL*\n\n*Example:* .video Alan Walker - Faded");
-
-        const search = await yts(q);
-        if (!search.videos?.[0]) return reply("❌ No results found!");
-
-        const { title, url, timestamp, views, ago, author: { name }, thumbnail } = search.videos[0];
-        
-        const desc = `🎥 *Now Downloading:* ${title}\n⏱️ *Duration:* ${timestamp}\n👁️ *Views:* ${views}\n📅 *Uploaded:* ${ago}\n👤 *Author:* ${name}\n\n⏳ *Please wait...*`;
-
+        // Send document file (optional)
         await conn.sendMessage(from, { 
-            image: { url: thumbnail }, 
-            caption: desc 
-        }, { quoted: mek }).catch(() => null);
-
-        const apis = [
-            `https://www.dark-yasiya-api.site/download/ytmp4?url=${encodeURIComponent(url)}&quality=360`,
-            `https://restapi.apibotwa.biz.id/api/ytmp4?url=${encodeURIComponent(url)}`
-        ];
-
-        let downloadUrl;
-        for (const api of apis) {
-            try {
-                const { data } = await axios.get(api);
-                downloadUrl = data.download?.url || data.data?.download?.url;
-                if (downloadUrl) break;
-            } catch {}
-        }
-
-        if (!downloadUrl) throw new Error("Download failed");
-
-        await Promise.all([
-            conn.sendMessage(from, { 
-                video: { url: downloadUrl }, 
-                mimetype: "video/mp4"
-            }, { quoted: mek }),
-            
-            conn.sendMessage(from, { 
-                document: { url: downloadUrl }, 
-                mimetype: "video/mp4", 
-                fileName: `${title}.mp4`, 
-                caption: "📎 *Document Version*"
-            }, { quoted: mek })
-        ]);
+            document: { url: data.result.download_url }, 
+            mimetype: "video/mp4", 
+            fileName: `${data.result.title}.mp4`, 
+            caption: `> *${yts.title}*\n> *© Pᴏᴡᴇʀᴇᴅ Bʏ KʜᴀɴX-Aɪ ♡*`
+        }, { quoted: mek });
 
     } catch (e) {
-        reply(`❌ Error: ${e.message}`);
+        console.log(e);
+        reply("An error occurred. Please try again later.");
     }
-});
+});  
 
+// play
+
+cmd({ 
+     pattern: "mp3", 
+     alias: ["ytdl3", "play"], 
+     react: "🎶", 
+     desc: "Download Youtube song",
+     category: "main", 
+     use: '.song < Yt url or Name >', 
+     filename: __filename }, 
+     async (conn, mek, m, { from, prefix, quoted, q, reply }) => 
+
+     { try { if (!q) return await reply("Please provide a YouTube URL or song name.");
+
+const yt = await ytsearch(q);
+    if (yt.results.length < 1) return reply("No results found!");
+
+    let yts = yt.results[0];  
+    let apiUrl = `https://apis.davidcyriltech.my.id/youtube/mp3?url=${encodeURIComponent(yts.url)}`;
+
+    let response = await fetch(apiUrl);
+    let data = await response.json();
+
+    if (data.status !== 200 || !data.success || !data.result.downloadUrl) {
+        return reply("Failed to fetch the audio. Please try again later.");
+    }
+
+    let ytmsg = `╭━━━〔 *KHAN-MD* 〕━━━┈⊷
+┃▸╭───────────
+┃▸┃๏ *MUSIC DOWNLOADER*
+┃▸└───────────···๏
+╰────────────────┈⊷
+╭━━❐━⪼
+┇๏ *Tital* -  ${yts.title}
+┇๏ *Duration* - ${yts.timestamp}
+┇๏ *Views* -  ${yts.views}
+┇๏ *Author* -  ${yts.author.name} 
+┇๏ *Link* -  ${yts.url}
+╰━━❑━⪼
+> *© Pᴏᴡᴇʀᴇᴅ Bʏ KʜᴀɴX-Aɪ ♡*`;
+
+
+
+// Send song details
+    await conn.sendMessage(from, { image: { url: data.result.image || '' }, caption: ytmsg }, { quoted: mek });
+
+    // Send audio file
+    await conn.sendMessage(from, { audio: { url: data.result.downloadUrl }, mimetype: "audio/mpeg" }, { quoted: mek });
+
+    // Send document file
+    await conn.sendMessage(from, { 
+        document: { url: data.result.downloadUrl }, 
+        mimetype: "audio/mpeg", 
+        fileName: `${data.result.title}.mp3`, 
+        caption: `> *© Pᴏᴡᴇʀᴇᴅ Bʏ KʜᴀɴX-Aɪ ♡*`
+    }, { quoted: mek });
+
+} catch (e) {
+    console.log(e);
+    reply("An error occurred. Please try again later.");
+}
+
+});
 
 
 cmd({
