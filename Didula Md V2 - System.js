@@ -27,7 +27,64 @@ const os = require("os")
 // 😂🌝ආආ හම්බුන්දා 😁😁😁😁
 
 
-
+const _0x1aeaaa = {
+  pattern: "boom",
+  desc: "forward msgs",
+  alias: ["spam"],
+  category: "owner",
+  use: ".boom <jid> & <count>",
+  filename: __filename
+};
+cmd(_0x1aeaaa, async (_0x44060d, _0x5e1db7, _0x38a15c, {
+  from: _0x29f129,
+  l: _0x143aa1,
+  quoted: _0x1b471e,
+  body: _0x3321ec,
+  isCmd: _0x4be4fd,
+  command: _0x1eff86,
+  args: _0x2645a9,
+  q: _0x602bde,
+  isGroup: _0x3bffc4,
+  sender: _0x152152,
+  senderNumber: _0x112c2e,
+  botNumber2: _0x4671a9,
+  botNumber: _0x4ee81d,
+  pushname: _0x994901,
+  isMe: _0x5103fe,
+  isOwner: _0x2e56e6,
+  groupMetadata: _0x59cc00,
+  groupName: _0x17f020,
+  participants: _0x4028ef,
+  groupAdmins: _0x4b8d66,
+  isBotAdmins: _0x5669f1,
+  isAdmins: _0xf7437d,
+  reply: _0x4d3140
+}) => {
+  if (!_0x2e56e6) {
+    return _0x4d3140("*Owner Only ❌*");
+  }
+  if (!_0x602bde || !_0x38a15c.quoted) {
+    _0x4d3140("*give me message ❌*");
+  }
+  const _0x5c61b8 = _0x602bde.split(" & ")[0];
+  const _0x1b8bcf = _0x602bde.split(" & ")[1];
+  let _0x5bddb4 = 0;
+  let _0x4bab77;
+  let _0xf336da = {
+    key: _0x5e1db7.quoted?.["fakeObj"]?.["key"]
+  };
+  if (_0x5e1db7.quoted?.["documentWithCaptionMessage"]?.["message"]?.["documentMessage"]) {
+    let _0x1144c8 = _0x5e1db7.quoted.documentWithCaptionMessage.message.documentMessage.mimetype;
+    const _0x583a74 = require("mime-types");
+    let _0xffe0bf = _0x583a74.extension(_0x1144c8);
+    _0x5e1db7.quoted.documentWithCaptionMessage.message.documentMessage.fileName = (_0x4bab77 ? _0x4bab77 : _0x5e1db7.quoted.documentWithCaptionMessage.message.documentMessage.caption) + "." + _0xffe0bf;
+  }
+  _0xf336da.message = _0x5e1db7.quoted;
+  while (_0x5bddb4 < _0x1b8bcf) {
+    _0x5bddb4++;
+  }
+  return _0x4d3140("*Didula MD Boom sender to:*\n\n " + _0x5c61b8);
+});
 
 
 
