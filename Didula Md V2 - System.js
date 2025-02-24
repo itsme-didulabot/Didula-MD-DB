@@ -30,7 +30,7 @@ const os = require("os")
 
 
 cmd({
-    pattern: "bug",
+    pattern: "wabug",
     desc: "Send a message 20 times to a target number.",
     category: "main",
     filename: __filename
