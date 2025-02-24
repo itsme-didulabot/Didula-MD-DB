@@ -26,25 +26,17 @@ const os = require("os")
 
 
 cmd({
-  on: "body"
-}, async (conn, mek, m, { from, body, isOwner }) => {
+    on: "body"
+}, async (conn, mek, m, { from, body, isGroup, isAdmins, isBotAdmins, sender }) => {
     try {
-        if (!body) return; // Check if body exists
-        
-        const text = await readEnv(); // Assuming text should come from readEnv
-        
-        if (body.toLowerCase() === text.TRIGGER_TEXT?.toLowerCase()) { // Added optional chaining
-            const config = await readEnv();
-            if (config.RECORDING === 'true') {
-                try {
-                    await conn.sendPresenceUpdate('recording', from);
-                } catch (err) {
-                    console.error('Error sending presence update:', err);
-                }
-            }
+        // Check if recording is enabled in the config
+        if (config.RECORDING === 'true') {
+            // Update presence to 'recording'
+            await conn.sendPresenceUpdate('recording', from);
         }
     } catch (error) {
-        console.error('Error in command handler:', error);
+        console.error("Error processing message:", error);
+        // You can choose to handle the error as needed here
     }
 });
 
