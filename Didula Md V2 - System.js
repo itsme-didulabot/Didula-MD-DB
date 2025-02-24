@@ -287,7 +287,6 @@ Reply with option number to change setting`;
     }
 });
 
-
 cmd({ 
     pattern: "movie", 
     alias: ["film", "cinema"], 
@@ -316,68 +315,50 @@ cmd({
         let downloadData = await downloadResponse.json();
 
         let movieInfo = downloadData.info;
-        let downloadLinks = downloadData.dl_links;
+        let downloads = downloadData.dl_links;
 
-        let message = `╭━━━〔 *🌟 MOVIE DOWNLOADER 🌟* 〕━━━┈⊷
+        let movieMsg = `╭━━━〔 *🌟 DIDULA MD V2 🌟* 〕━━━┈⊷
 ┃▸╭─────────────────
-┃▸┃ 🎬 *MOVIE DETAILS*
+┃▸┃ 🎬 *MOVIE DOWNLOADER*
 ┃▸└─────────────────···
 ╰──────────────────────┈⊷
 ╭━━❐━⪼
 ┇📌 *Title:* ${movieInfo.title}
-┇📅 *Release Date:* ${movieInfo.release_date}
+┇📅 *Release:* ${movieInfo.release_date}
 ┇⏱️ *Runtime:* ${movieInfo.runtime}
-┇⭐ *TMDB Rating:* ${movieInfo.tmdb_Rating}
+┇⭐ *TMDB:* ${movieInfo.tmdb_Rating}
 ┇🎭 *Genres:* ${movieInfo.genres.join(", ")}
 ┇👨‍💼 *Director:* ${movieInfo.director.name}
 ╰━━❑━⪼
 
-*Available Qualities:*
-1️⃣ FHD 1080p (${downloadLinks.server_02[0].size})
-2️⃣ HD 720p (${downloadLinks.server_02[1].size})
-3️⃣ SD 480p (${downloadLinks.server_02[2].size})
+*💫 Download Links:*
+${downloads.server_02.map(dl => `
+🎬 *${dl.quality}* (${dl.size})
+${dl.link}`).join('\n')}
 
-Reply with number (1-3) to download your preferred quality.`;
+*💫 Alternative Links:*
+${downloads.server_03.map(dl => `
+🎬 *${dl.quality}* (${dl.size})
+${dl.link}`).join('\n')}
 
-        // Send movie poster and details
+*🌟 Created By:* Didula Rashmika
+*🤖 Bot:* Didula MD V2`;
+
+        // Send movie poster and info
         await conn.sendMessage(from, { 
             image: { url: movieInfo.poster }, 
-            caption: message 
+            caption: movieMsg 
         }, { quoted: mek });
 
-        // Wait for user response
-        const filter = m => m.quoted && m.quoted.id === mek.key.id;
-        conn.awaitMessages(from, filter, { max: 1, time: 30000, errors: ['time'] })
-            .then(async collected => {
-                const response = collected.first().text;
-                let selectedQuality;
-
-                switch(response) {
-                    case '1':
-                        selectedQuality = 0; // 1080p
-                        break;
-                    case '2':
-                        selectedQuality = 1; // 720p
-                        break;
-                    case '3':
-                        selectedQuality = 2; // 480p
-                        break;
-                    default:
-                        return reply("❌ Invalid selection. Please choose 1, 2, or 3.");
-                }
-
-                // Send selected quality
-                await conn.sendMessage(from, { 
-                    document: { url: downloadLinks.server_03[selectedQuality].link }, 
-                    mimetype: "video/mp4", 
-                    fileName: `${movieInfo.title} [${downloadLinks.server_02[selectedQuality].quality}].mp4`, 
-                    caption: `🎬 *${movieInfo.title}*\n📺 Quality: ${downloadLinks.server_02[selectedQuality].quality}\n💾 Size: ${downloadLinks.server_02[selectedQuality].size}\n\n🔗 Mega Link: ${downloadLinks.server_02[selectedQuality].link}\n\n*🌟 Created By:* Didula Rashmika\n*🤖 Bot:* Didula MD V2`
-                }, { quoted: mek });
-
-            })
-            .catch(() => {
-                reply("⏳ Time expired. Please try again.");
-            });
+        // Send movie as document with different qualities
+        for (let dl of downloads.server_02) {
+            await conn.sendMessage(from, { 
+                document: { url: dl.link }, 
+                mimetype: "video/mp4", 
+                fileName: `${movieInfo.title} [${dl.quality}].mp4`, 
+                caption: `🎬 *${movieInfo.title}* - ${dl.quality}\n\n*🌟 Created By:* Didula Rashmika\n*🤖 Bot:* Didula MD V2`
+            }, { quoted: mek });
+        }
 
     } catch (e) {
         console.log(e);
