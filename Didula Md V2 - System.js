@@ -297,11 +297,11 @@ cmd({
 }, async (conn, mek, m, { from, q, reply }) => {
     try {
         if (!q || q.trim() === "") {
-            return reply("*⚠️ Please provide a movie name (E.g: .sinhalasub spider man)*");
+            return reply("*⚠️ Please provide a movie name (E.g: .movie spider man)*");
         }
 
-        const searchUrl = `https://www.dark-yasiya-api.site/movie/sinhalasub/search?text=${encodeURIComponent(q)}`;
-        
+        const searchUrl = `https://omindu-api.up.railway.app/api/sinhalasub/search?query=${encodeURIComponent(q)}`;
+
         const fetchData = async (url, retries = 3) => {
             for (let i = 0; i < retries; i++) {
                 try {
@@ -316,16 +316,18 @@ cmd({
 
         const data = await fetchData(searchUrl);
 
-        if (!data?.result?.data?.length) {
-            return reply("*⚠️ No results found. Try including the year (E.g: .sinhalasub love 2015)*");
+        if (!data?.results?.movies?.length && !data?.results?.tvshows?.length) {
+            return reply("*⚠️ No results found. Try with a different name or include the year*");
         }
 
-        const topFilms = data.result.data.slice(0, 20);
-        const filmsList = topFilms.map((film, index) => {
-            return `${index + 1}. 🎬 *${film.title}*\n   ⭐ ${film.imdb} | 📅 ${film.year} | 📺 ${film.type}`;
+        const allResults = [...(data.results.movies || []), ...(data.results.tvshows || [])];
+        const topResults = allResults.slice(0, 20);
+
+        const resultsList = topResults.map((item, index) => {
+            return `${index + 1}. 🎬 *${item.title}*\n   ⭐ ${item.rating || 'N/A'} | 📅 ${item.year} | 📺 ${item.type}`;
         }).join("\n\n");
 
-        const msg = `🎥 *Movie Search Results*\n\n🔍 *Query:* ${q}\n\n${filmsList}\n\n📝 *Reply with a number (1-${topFilms.length}) to select*`;
+        const msg = `🎥 *Search Results*\n\n🔍 *Query:* ${q}\n\n${resultsList}\n\n📝 *Reply with a number (1-${topResults.length}) to select*`;
 
         const sentMsg = await conn.sendMessage(from, { text: msg }, { quoted: mek });
 
@@ -339,53 +341,66 @@ cmd({
             if (!isReplyToBot || !/^\d+$/.test(userReply)) return;
 
             const selectedIndex = parseInt(userReply) - 1;
-            if (selectedIndex < 0 || selectedIndex >= topFilms.length) {
-                return reply("*❌ Invalid selection. Please choose a number between 1-20*");
+            if (selectedIndex < 0 || selectedIndex >= topResults.length) {
+                return reply("*❌ Invalid selection*");
             }
 
-            const selectedFilm = topFilms[selectedIndex];
-            
+            const selectedItem = topResults[selectedIndex];
+
             try {
-                const movieDetails = await fetchData(`https://www.dark-yasiya-api.site/movie/sinhalasub/movie?url=${selectedFilm.link}`);
-                
-                if (!movieDetails?.result?.data) {
-                    throw new Error("Failed to fetch movie details");
+                const movieDetails = await fetchData(`https://omindu-api.up.railway.app/api/sinhalasub/download?url=${selectedItem.link}`);
+
+                if (!movieDetails?.result) {
+                    throw new Error("Failed to fetch details");
                 }
 
-                const { data: movie } = movieDetails.result;
+                const movie = movieDetails.result;
 
-                const detailsMsg = `🎥 *MOVIE DETAILS* 🎥
+                const detailsMsg = `🎬 *${movie.title}*
 
-*🎬 Title:* ${movie.title}
-*📅 Release:* ${movie.date || 'N/A'}
-*⭐ IMDb:* ${movie.imdbRate || 'N/A'}/10
+${movie.tagline ? `*" ${movie.tagline} "*\n\n` : ''}*📅 Release:* ${movie.release_date || 'N/A'}
+*⭐ IMDb:* ${movie.imdb_rating}
+*🌟 TMDB:* ${movie.tmdb_Rating || 'N/A'}/10
 *⏱️ Runtime:* ${movie.runtime || 'N/A'}
 *🌍 Country:* ${movie.country || 'N/A'}
-*🎭 Genre:* ${movie.category.join(", ")}
-*👨‍💼 Director:* ${movie.director}
+*🎭 Genre:* ${movie.genres.join(", ")}
+
+*👨‍💼 Director:* ${movie.director.name}
 
 *📝 Description:*
 ${movie.description}
 
-*🎭 Cast:*
-${movie.cast.map(c => `• ${c.cast_name} (${c.reall_name})`).join("\n")}`;
+*👥 Cast:*
+${movie.cast.map(actor => `• ${actor.name} ${actor.character !== 'N/A' ? `as ${actor.character}` : ''}`).join("\n")}`;
 
                 await conn.sendMessage(from, {
-                    image: { url: movie.image },
+                    image: { url: movie.poster },
                     caption: detailsMsg
                 }, { quoted: mek });
 
-                if (movie.dl_links?.length) {
+                if (movie.dl_links) {
+                    const allLinks = [];
+                    
+                    // Organize all download links
+                    Object.entries(movie.dl_links).forEach(([server, links]) => {
+                        links.forEach(link => {
+                            allLinks.push({
+                                ...link,
+                                server: server
+                            });
+                        });
+                    });
+
                     const downloadOptions = `
-╭━─━─━─≪🎬≫─━─━─━╮
-│ 📥 *DOWNLOAD OPTIONS*
+╭━─━─━─≪📥≫─━─━─━╮
+│ *DOWNLOAD OPTIONS*
 │
-${movie.dl_links.map((link, index) => `│ ${index + 1}. *${link.quality}*
+${allLinks.map((link, index) => `│ ${index + 1}. *${link.quality}*
 │    📦 Size: ${link.size}
-│    🔗 Quality: ${link.quality}`).join('\n│\n')}
+│    🔗 Server: ${link.server}`).join('\n│\n')}
 │
 │ 📌 *Reply with number to download*
-╰━─━─━─≪🎬≫─━─━─━╯`;
+╰━─━─━─≪📥≫─━─━─━╯`;
 
                     const dlMsg = await conn.sendMessage(from, { text: downloadOptions }, { quoted: mek });
 
@@ -399,38 +414,43 @@ ${movie.dl_links.map((link, index) => `│ ${index + 1}. *${link.quality}*
                         if (!isDlReplyToBot || !/^\d+$/.test(dlReply)) return;
 
                         const dlIndex = parseInt(dlReply) - 1;
-                        if (dlIndex < 0 || dlIndex >= movie.dl_links.length) {
+                        if (dlIndex < 0 || dlIndex >= allLinks.length) {
                             return reply("*❌ Invalid download option*");
                         }
 
-                        const selectedLink = movie.dl_links[dlIndex];
-                        const modifiedLink = selectedLink.link.replace("/u/", "/api/file/");
+                        const selectedLink = allLinks[dlIndex];
 
                         await conn.sendMessage(from, { react: { text: "⬇️", key: dlResponse.key }});
 
-                        await conn.sendMessage(from, {
-                            document: { url: modifiedLink },
-                            mimetype: "video/mp4",
-                            fileName: `${movie.title} [${selectedLink.quality}].mp4`,
-                            caption: `🎬 *${movie.title}*\n📊 Quality: ${selectedLink.quality}\n📦 Size: ${selectedLink.size}`
-                        }, { quoted: mek });
+                        try {
+                            await conn.sendMessage(from, {
+                                document: { url: selectedLink.link },
+                                fileName: `${movie.title} [${selectedLink.quality}].mp4`,
+                                mimetype: "video/mp4",
+                                caption: `🎬 *${movie.title}*\n📊 Quality: ${selectedLink.quality}\n📦 Size: ${selectedLink.size}\n🔗 Server: ${selectedLink.server}`
+                            }, { quoted: mek });
 
-                        await conn.sendMessage(from, { react: { text: "✅", key: dlResponse.key }});
+                            await conn.sendMessage(from, { react: { text: "✅", key: dlResponse.key }});
+                        } catch (error) {
+                            await conn.sendMessage(from, { react: { text: "❌", key: dlResponse.key }});
+                            await conn.sendMessage(from, {
+                                text: `*⚠️ Direct download failed*\n\n*Here's your download link:*\n${selectedLink.link}`,
+                                quoted: mek
+                            });
+                        }
                     });
                 }
 
-                if (movie.images?.length) {
-                    await conn.sendMessage(from, { text: "*📸 Uploading additional images...*" });
-                    for (const imageUrl of movie.images) {
+                if (movie.image_urls?.length) {
+                    for (const imageUrl of movie.image_urls) {
                         await conn.sendMessage(from, {
-                            image: { url: imageUrl },
-                            caption: `🎬 *${movie.title}* - Additional Image`
+                            image: { url: imageUrl }
                         });
                     }
                 }
 
             } catch (error) {
-                reply("*❌ Failed to fetch movie details. Please try again later.*");
+                reply("*❌ Failed to fetch details. Please try again later.*");
                 console.error(error);
             }
         });
@@ -440,10 +460,6 @@ ${movie.dl_links.map((link, index) => `│ ${index + 1}. *${link.quality}*
         console.error(error);
     }
 });
-
-
-
-
 
 
 cmd({
