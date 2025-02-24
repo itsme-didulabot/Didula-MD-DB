@@ -87,8 +87,7 @@ try {
 }
 });
 
-import * as cheerio from "cheerio";
-import axios from "axios";
+
 
 async function ytVideo(url) {
   let { data } = await axios.get(`https://10downloader.com/download?v=${encodeURIComponent(url)}&lang=en&type=video`);
