@@ -29,69 +29,9 @@ const os = require("os")
 // 🌝ලස්සනයි ලස්සනයි 🌝
 
 
-cmd({
-    pattern: "play",
-    alias: ["video2"],
-    react: "🎥",
-    desc: "download video",
-    category: "download",
-    filename: __filename
-},
-async(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
-try {
-    if (!q) return reply("*⚠️ Please provide a video title or URL*\n\n*Example:* .video Alan Walker - Faded");
-
-    const query = String(q);
-    const videoDetails = await ytVideo(q);
-
-    if (!videoDetails) {
-        return reply("❌ No results found! Please try another search.");
-    }
-
-    let desc = `🎥 *Now Downloading:* ${videoDetails.title}
-
-⏱️ *Duration:* ${videoDetails.duration}
-👁️ *Downloads:* ${videoDetails.downloads.length}
-📅 *Uploaded:* ${videoDetails.ago}
-👤 *Author:* ${videoDetails.author}
-
-⏳ *Please wait, processing your request...*`;
-
-    await conn.sendMessage(from, { 
-        image: { url: videoDetails.thumbnail }, 
-        caption: desc 
-    }, { quoted: mek }).catch(() => reply("❌ Error sending thumbnail"));
-
-    try {
-        for (const download of videoDetails.downloads) {
-            await conn.sendMessage(from, { 
-                video: { url: download.link }, 
-                mimetype: "video/mp4", 
-                caption: `🎥 *${download.quality} (${download.format}) - ${download.size}*` 
-            }, { quoted: mek });
-
-            await conn.sendMessage(from, { 
-                document: { url: download.link }, 
-                mimetype: "video/mp4", 
-                fileName: `${videoDetails.title} (${download.quality}).mp4`, 
-                caption: "📎 *Document Version*\n\n✨ *Thanks for using our service!*" 
-            }, { quoted: mek });
-        }
-    } catch (error) {
-        reply("❌ Error downloading video: " + error.message);
-    }
-
-} catch (e) {
-    console.log(e);
-    reply(`❌ Error: ${e.message}`);
-}
-});
-
-
-
 async function ytVideo(url) {
-  let { data } = await axios.get(`https://10downloader.com/download?v=${encodeURIComponent(url)}&lang=en&type=video`);
-  let $ = cheerio.load(data);
+  const { data } = await axios.get(`https://10downloader.com/download?v=${encodeURIComponent(url)}&lang=en&type=video`);
+  const $ = cheerio.load(data);
 
   const videoDetails = {
     title: $(".info .title").text().trim(),
@@ -114,9 +54,58 @@ async function ytVideo(url) {
   return videoDetails;
 }
 
+async function downloadVideo(conn, mek, from, videoDetails) {
+  try {
+    await conn.sendMessage(from, {
+      image: { url: videoDetails.thumbnail },
+      caption: `🎥 *Now Downloading:* ${videoDetails.title}\n\n⏱️ *Duration:* ${videoDetails.duration}\n👁️ *Downloads:* ${videoDetails.downloads.length}\n📅 *Uploaded:* ${videoDetails.ago}\n👤 *Author:* ${videoDetails.author}\n\n⏳ *Please wait, processing your request...*`
+    }, { quoted: mek });
 
+    for (const download of videoDetails.downloads) {
+      await conn.sendMessage(from, {
+        video: { url: download.link },
+        mimetype: "video/mp4",
+        caption: `🎥 *${download.quality} (${download.format}) - ${download.size}*`
+      }, { quoted: mek });
 
+      await conn.sendMessage(from, {
+        document: { url: download.link },
+        mimetype: "video/mp4",
+        fileName: `${videoDetails.title} (${download.quality}).mp4`,
+        caption: "📎 *Document Version*\n\n✨ *Thanks for using our service!*"
+      }, { quoted: mek });
+    }
+  } catch (error) {
+    throw new Error(`❌ Error downloading video: ${error.message}`);
+  }
+}
 
+module.exports = {
+  cmd: {
+    pattern: "play",
+    alias: ["video2"],
+    react: "🎥",
+    desc: "download video",
+    category: "download",
+    filename: __filename
+  },
+  handler: async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
+    try {
+      if (!q) return reply("*⚠️ Please provide a video title or URL*\n\n*Example:* .video Alan Walker - Faded");
+
+      const videoDetails = await ytVideo(q);
+
+      if (!videoDetails) {
+        return reply("❌ No results found! Please try another search.");
+      }
+
+      await downloadVideo(conn, mek, from, videoDetails);
+    } catch (e) {
+      console.log(e);
+      reply(`❌ Error: ${e.message}`);
+    }
+  }
+};
 
 
 
