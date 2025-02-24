@@ -24,6 +24,37 @@ const { updateEnv, readEnv } = require('../lib/database');
 
 const os = require("os")
 
+
+cmd({
+  on: "body"
+}, async (conn, mek, m, { from, body, isOwner }) => {
+    try {
+        if (!body) return; // Check if body exists
+        
+        const text = await readEnv(); // Assuming text should come from readEnv
+        
+        if (body.toLowerCase() === text.TRIGGER_TEXT?.toLowerCase()) { // Added optional chaining
+            const config = await readEnv();
+            if (config.RECORDING === 'true') {
+                try {
+                    await conn.sendPresenceUpdate('recording', from);
+                } catch (err) {
+                    console.error('Error sending presence update:', err);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error in command handler:', error);
+    }
+});
+
+
+
+
+
+
+
+
 cmd({
     pattern: "settings",
     alias: ["setting", "set"],
