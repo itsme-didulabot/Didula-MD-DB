@@ -687,86 +687,56 @@ cmd({
     category: "download",
     filename: __filename
 },
-async(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
-try {
-    if (!q) return reply("*⚠️ Please provide a song title or URL*\n\n*Example:* .song Alan Walker - Faded");
-
-    const query = String(q);
-    const search = await yts(query);
-
-    if (!search.videos || !search.videos.length) {
-        return reply("❌ No results found! Please try another search.");
-    }
-
-    const deta = search.videos[0];
-    const url = deta.url;
-
-    let desc = `🎵 *Now Downloading:* ${deta.title}
-
-🎧 *Duration:* ${deta.timestamp}
-👁️ *Views:* ${deta.views}
-📅 *Uploaded:* ${deta.ago}
-👤 *Author:* ${deta.author.name}
-
-⏳ *Please wait, processing your request...*`;
-
-    await conn.sendMessage(from, { 
-        image: { url: deta.thumbnail }, 
-        caption: desc 
-    }, { quoted: mek }).catch(() => reply("❌ Error sending thumbnail"));
-
-    async function tryDownload() {
-        try {
-            // Try API 1
-            const response1 = await axios.get(`https://www.dark-yasiya-api.site/download/ytmp3?url=${encodeURIComponent(url)}`);
-            if (response1.data && response1.data.download && response1.data.download.url) {
-                return response1.data.download.url;
-            }
-        } catch {}
-
-        try {
-            // Try API 3
-            const response3 = await axios.get(`https://vajira-official-api.vercel.app/download/ytmp3?url=${encodeURIComponent(url)}`);
-            if (response3.data && response3.data.dl_link) {
-                return response3.data.dl_link;
-            }
-        } catch {}
-
-        try {
-            // Try API 5
-            const response5 = await axios.get(`https://apis.davidcyriltech.my.id/download/ytmp3?url=${encodeURIComponent(url)}`);
-            if (response5.data && response5.data.result && response5.data.result.download_url) {
-                return response5.data.result.download_url;
-            }
-        } catch {}
-
-        throw new Error("All APIs failed");
-    }
-
+async(conn, mek, m, { from, q, reply }) => {
     try {
-        const downloadUrl = await tryDownload();
+        if (!q) return reply("*⚠️ Please provide a song title or URL*\n\n*Example:* .song Alan Walker - Faded");
+
+        const search = await yts(q);
+        if (!search.videos?.[0]) return reply("❌ No results found!");
+
+        const { title, url, timestamp, views, ago, author: { name }, thumbnail } = search.videos[0];
+        
+        const desc = `🎵 *Now Downloading:* ${title}\n🎧 *Duration:* ${timestamp}\n👁️ *Views:* ${views}\n📅 *Uploaded:* ${ago}\n👤 *Author:* ${name}\n\n⏳ *Please wait...*`;
 
         await conn.sendMessage(from, { 
-            audio: { url: downloadUrl }, 
-            mimetype: "audio/mpeg", 
-            caption: "🎵 *Successfully Downloaded!*" 
-        }, { quoted: mek });
+            image: { url: thumbnail }, 
+            caption: desc 
+        }, { quoted: mek }).catch(() => null);
 
-        await conn.sendMessage(from, { 
-            document: { url: downloadUrl }, 
-            mimetype: "audio/mpeg", 
-            fileName: `${deta.title}.mp3`, 
-            caption: "📎 *Document Version*\n\n✨ *Thanks for using our service!*" 
-        }, { quoted: mek });
+        const apis = [
+            `https://www.dark-yasiya-api.site/download/ytmp3?url=${encodeURIComponent(url)}`,
+            `https://vajira-official-api.vercel.app/download/ytmp3?url=${encodeURIComponent(url)}`,
+            `https://apis.davidcyriltech.my.id/download/ytmp3?url=${encodeURIComponent(url)}`
+        ];
 
-    } catch (error) {
-        reply("❌ Error downloading audio: " + error.message);
+        let downloadUrl;
+        for (const api of apis) {
+            try {
+                const { data } = await axios.get(api);
+                downloadUrl = data.download?.url || data.dl_link || data.result?.download_url;
+                if (downloadUrl) break;
+            } catch {}
+        }
+
+        if (!downloadUrl) throw new Error("Download failed");
+
+        await Promise.all([
+            conn.sendMessage(from, { 
+                audio: { url: downloadUrl }, 
+                mimetype: "audio/mpeg"
+            }, { quoted: mek }),
+            
+            conn.sendMessage(from, { 
+                document: { url: downloadUrl }, 
+                mimetype: "audio/mpeg", 
+                fileName: `${title}.mp3`, 
+                caption: "📎 *Document Version*"
+            }, { quoted: mek })
+        ]);
+
+    } catch (e) {
+        reply(`❌ Error: ${e.message}`);
     }
-
-} catch (e) {
-    console.log(e);
-    reply(`❌ Error: ${e.message}`);
-}
 });
 
 cmd({
@@ -777,79 +747,57 @@ cmd({
     category: "download",
     filename: __filename
 },
-async(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
-try {
-    if (!q) return reply("*⚠️ Please provide a video title or URL*\n\n*Example:* .video Alan Walker - Faded");
-
-    const query = String(q);
-    const search = await yts(query);
-
-    if (!search.videos || !search.videos.length) {
-        return reply("❌ No results found! Please try another search.");
-    }
-
-    const deta = search.videos[0];
-    const url = deta.url;
-
-    let desc = `🎥 *Now Downloading:* ${deta.title}
-
-⏱️ *Duration:* ${deta.timestamp}
-👁️ *Views:* ${deta.views}
-📅 *Uploaded:* ${deta.ago}
-👤 *Author:* ${deta.author.name}
-
-⏳ *Please wait, processing your request...*`;
-
-    await conn.sendMessage(from, { 
-        image: { url: deta.thumbnail }, 
-        caption: desc 
-    }, { quoted: mek }).catch(() => reply("❌ Error sending thumbnail"));
-
-    async function tryVideoDownload() {
-        try {
-            // Try API 1
-            const response1 = await axios.get(`https://www.dark-yasiya-api.site/download/ytmp4?url=${encodeURIComponent(url)}&quality=360`);
-            if (response1.data && response1.data.download && response1.data.download.url) {
-                return response1.data.download.url;
-            }
-        } catch {}
-
-        try {
-            // Try API 4
-            const response4 = await axios.get(`https://restapi.apibotwa.biz.id/api/ytmp4?url=${encodeURIComponent(url)}`);
-            if (response4.data && response4.data.data && response4.data.data.download && response4.data.data.download.url) {
-                return response4.data.data.download.url;
-            }
-        } catch {}
-
-        throw new Error("All APIs failed");
-    }
-
+async(conn, mek, m, { from, q, reply }) => {
     try {
-        const downloadUrl = await tryVideoDownload();
+        if (!q) return reply("*⚠️ Please provide a video title or URL*\n\n*Example:* .video Alan Walker - Faded");
+
+        const search = await yts(q);
+        if (!search.videos?.[0]) return reply("❌ No results found!");
+
+        const { title, url, timestamp, views, ago, author: { name }, thumbnail } = search.videos[0];
+        
+        const desc = `🎥 *Now Downloading:* ${title}\n⏱️ *Duration:* ${timestamp}\n👁️ *Views:* ${views}\n📅 *Uploaded:* ${ago}\n👤 *Author:* ${name}\n\n⏳ *Please wait...*`;
 
         await conn.sendMessage(from, { 
-            video: { url: downloadUrl }, 
-            mimetype: "video/mp4", 
-            caption: "🎥 *Successfully Downloaded!*" 
-        }, { quoted: mek });
+            image: { url: thumbnail }, 
+            caption: desc 
+        }, { quoted: mek }).catch(() => null);
 
-        await conn.sendMessage(from, { 
-            document: { url: downloadUrl }, 
-            mimetype: "video/mp4", 
-            fileName: `${deta.title}.mp4`, 
-            caption: "📎 *Document Version*\n\n✨ *Thanks for using our service!*" 
-        }, { quoted: mek });
+        const apis = [
+            `https://www.dark-yasiya-api.site/download/ytmp4?url=${encodeURIComponent(url)}&quality=360`,
+            `https://restapi.apibotwa.biz.id/api/ytmp4?url=${encodeURIComponent(url)}`
+        ];
 
-    } catch (error) {
-        reply("❌ Error downloading video: " + error.message);
+        let downloadUrl;
+        for (const api of apis) {
+            try {
+                const { data } = await axios.get(api);
+                downloadUrl = data.download?.url || data.data?.download?.url;
+                if (downloadUrl) break;
+            } catch {}
+        }
+
+        if (!downloadUrl) throw new Error("Download failed");
+
+        await Promise.all([
+            conn.sendMessage(from, { 
+                video: { url: downloadUrl }, 
+                mimetype: "video/mp4"
+            }, { quoted: mek }),
+            
+            conn.sendMessage(from, { 
+                document: { url: downloadUrl }, 
+                mimetype: "video/mp4", 
+                fileName: `${title}.mp4`, 
+                caption: "📎 *Document Version*"
+            }, { quoted: mek })
+        ]);
+
+    } catch (e) {
+        reply(`❌ Error: ${e.message}`);
     }
-
-} catch (e) {
-    console.log(e);
-    reply(`❌ Error: ${e.message}`);
-}
 });
+
 
 
 cmd({
