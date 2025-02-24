@@ -29,86 +29,65 @@ const os = require("os")
 // 🌝ලස්සනයි ලස්සනයි 🌝
 
 
-async function ytVideo(url) {
-  const { data } = await axios.get(`https://10downloader.com/download?v=${encodeURIComponent(url)}&lang=en&type=video`);
-  const $ = cheerio.load(data);
-
-  const videoDetails = {
-    title: $(".info .title").text().trim(),
-    thumbnail: $(".info img").attr("src"),
-    duration: $(".info .duration").text().replace("Duration:", "").trim(),
-    downloads: []
-  };
-
-  $("#video-downloads .downloadsTable tbody tr").each((i, el) => {
-    const quality = $(el).find("td:nth-child(1)").text().trim();
-    const format = $(el).find("td:nth-child(2)").text().trim();
-    const size = $(el).find("td:nth-child(3)").text().trim();
-    const link = $(el).find("td:nth-child(4) a").attr("href");
-
-    if (link) {
-      videoDetails.downloads.push({ quality, format, size, link });
-    }
-  });
-
-  return videoDetails;
-}
-
-async function downloadVideo(conn, mek, from, videoDetails) {
-  try {
-    await conn.sendMessage(from, {
-      image: { url: videoDetails.thumbnail },
-      caption: `🎥 *Now Downloading:* ${videoDetails.title}\n\n⏱️ *Duration:* ${videoDetails.duration}\n👁️ *Downloads:* ${videoDetails.downloads.length}\n📅 *Uploaded:* ${videoDetails.ago}\n👤 *Author:* ${videoDetails.author}\n\n⏳ *Please wait, processing your request...*`
-    }, { quoted: mek });
-
-    for (const download of videoDetails.downloads) {
-      await conn.sendMessage(from, {
-        video: { url: download.link },
-        mimetype: "video/mp4",
-        caption: `🎥 *${download.quality} (${download.format}) - ${download.size}*`
-      }, { quoted: mek });
-
-      await conn.sendMessage(from, {
-        document: { url: download.link },
-        mimetype: "video/mp4",
-        fileName: `${videoDetails.title} (${download.quality}).mp4`,
-        caption: "📎 *Document Version*\n\n✨ *Thanks for using our service!*"
-      }, { quoted: mek });
-    }
-  } catch (error) {
-    throw new Error(`❌ Error downloading video: ${error.message}`);
-  }
-}
-
-module.exports = {
-  cmd: {
+cmd({
     pattern: "play",
-    alias: ["video2"],
     react: "🎥",
     desc: "download video",
     category: "download",
     filename: __filename
-  },
-  handler: async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
+},
+async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
     try {
-      if (!q) return reply("*⚠️ Please provide a video title or URL*\n\n*Example:* .video Alan Walker - Faded");
+        if (!q) return reply("❌Please give me url or title")
+        const search = await yts(q)
+        const deta = search.videos[0]
+        const url = deta.url
 
-      const videoDetails = await ytVideo(q);
+        const videoDetails = await ytVideo(url)
 
-      if (!videoDetails) {
-        return reply("❌ No results found! Please try another search.");
-      }
+        let desc = `ᴅɪᴅᴜʟᴀ ᴍᴅ ᴠ2 ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴛʜɪꜱ ᴠɪᴅᴇᴏ -
+*${videoDetails.title} 💚*
 
-      await downloadVideo(conn, mek, from, videoDetails);
+Duration: ${videoDetails.duration}
+Size: ${videoDetails.downloads[0].size}
+`
+
+        await conn.sendMessage(from, { image: { url: videoDetails.thumbnail }, caption: desc }, { quoted: mek })
+
+        // send video message
+        await conn.sendMessage(from, { video: { url: videoDetails.downloads[0].link }, mimetype: "video/mp4", caption: "*©ᴅɪᴅᴜʟᴀ ᴍᴅ ᴠ2💚*" }, { quoted: mek })
+        await conn.sendMessage(from, { document: { url: videoDetails.downloads[0].link }, mimetype: "video/mp4", fileName: videoDetails.title + ".mp4", caption: "*©ᴅɪᴅᴜʟᴀ ᴍᴅ ᴠ2💚*" }, { quoted: mek })
+
     } catch (e) {
-      console.log(e);
-      reply(`❌ Error: ${e.message}`);
+        console.log(e)
+        reply(`${e}`)
     }
-  }
-};
+})
 
+async function ytVideo(url) {
+    let { data } = await axios.get(`https://10downloader.com/download?v=${encodeURIComponent(url)}&lang=en&type=video`)
+    let $ = cheerio.load(data)
 
+    const videoDetails = {
+        title: $(".info .title").text().trim(),
+        thumbnail: $(".info img").attr("src"),
+        duration: $(".info .duration").text().replace("Duration:", "").trim(),
+        downloads: []
+    }
 
+    $("#video-downloads .downloadsTable tbody tr").each((i, el) => {
+        const quality = $(el).find("td:nth-child(1)").text().trim()
+        const format = $(el).find("td:nth-child(2)").text().trim()
+        const size = $(el).find("td:nth-child(3)").text().trim()
+        const link = $(el).find("td:nth-child(4) a").attr("href")
+
+        if (link) {
+            videoDetails.downloads.push({ quality, format, size, link })
+        }
+    })
+
+    return videoDetails
+}
 
 
 
