@@ -19,7 +19,7 @@ const config = require('../settings')
 const xml2js = require('xml2js');
 
 
-
+const { updateEnv, readEnv } = require('../lib/database');
 
 
 const os = require("os")
@@ -114,99 +114,99 @@ try {
             if (msg.message.extendedTextMessage.contextInfo && msg.message.extendedTextMessage.contextInfo.stanzaId === vv.key.id) {
                 switch (selectedOption) {
                     case '1.1':
-                        reply(".update MODE:public" );
+                        reply("set MODE:public" );
                         reply(".restart");
                         break;
                     case '1.2':               
-                        reply(".update MODE:private");
+                        reply("set MODE:private");
                         reply(".restart");
                         break;
                     case '1.3':               
-                        reply(".update MODE:group");
+                        reply("set MODE:group");
                         reply(".restart");
                         break;
                     case '1.4':     
-                        reply(".update MODE:inbox");
+                        reply("set MODE:inbox");
                         reply(".restart");
                         break;
                     case '2.1':     
-                        reply(".update AUTO_SONG_SENDER:true");
+                        reply("set AUTO_SONG_SENDER:true");
                         reply(".restart");
                         break;
                     case '2.2':     
-                        reply(".update AUTO_SONG_SENDER:false");
+                        reply("set AUTO_SONG_SENDER:false");
                         reply(".restart");
                         break;
                     case '3.1':    
-                        reply(".update AUTO_READ_STATUS:true");
+                        reply("set AUTO_READ_STATUS:true");
                         reply(".restart");
                         break;
                     case '3.2':    
-                        reply(".update AUTO_READ_STATUS:false");
+                        reply("set AUTO_READ_STATUS:false");
                         reply(".restart");
                         break;
                     case '4.1': 
-                        reply(".update AI_CHAT:true");
+                        reply("set AI_CHAT:true");
                         reply(".restart");
                         break;
                     case '4.2': 
-                        reply(".update AI_CHAT:false");
+                        reply("set AI_CHAT:false");
                         reply(".restart");
                         break;
                     case '5.1': 
-                        reply(".update RECORDING:true");
+                        reply("set RECORDING:true");
                         reply(".restart");
                         break;
                     case '5.2': 
-                        reply(".update RECORDING:false");
+                        reply("set RECORDING:false");
                         reply(".restart");
                         break;
                     case '6.1':      
-                        reply(".update READ_CMD:true");
+                        reply("set READ_CMD:true");
                         reply(".restart");
                         break;
                     case '6.2':   
-                        reply(".update READ_CMD:false");
+                        reply("set READ_CMD:false");
                         reply(".restart");
                         break;
                     case '7.1': 
-                        reply(".update ANTI_BAD:true");
+                        reply("set ANTI_BAD:true");
                         reply(".restart");
                         break;
                     case '7.2':   
-                        reply(".update ANTI_BAD:false");
+                        reply("set ANTI_BAD:false");
                         reply(".restart");
                         break;
                     case '8.1': 
-                        reply(".update ANTI_LINK:true");
+                        reply("set ANTI_LINK:true");
                         reply(".restart");
                         break;
                     case '8.2':   
-                        reply(".update ANTI_LINK:false");
+                        reply("set ANTI_LINK:false");
                         reply(".restart");
                         break;
                     case '9.1': 
-                        reply(".update ANTI_CALL:true");
+                        reply("set ANTI_CALL:true");
                         reply(".restart");
                         break;
                     case '9.2':   
-                        reply(".update ANTI_CALL:false");
+                        reply("set ANTI_CALL:false");
                         reply(".restart");
                         break;
                     case '10.1': 
-                        reply(".update ANTI_DELETE:true");
+                        reply("set ANTI_DELETE:true");
                         reply(".restart");
                         break;
                     case '10.2':   
-                        reply(".update ANTI_DELETE:false");
+                        reply("set ANTI_DELETE:false");
                         reply(".restart");
                         break;
                     case '11.1': 
-                        reply(".update ANTI_BOT:true");
+                        reply("set ANTI_BOT:true");
                         reply(".restart");
                         break;
                     case '11.2':   
-                        reply(".update ANTI_BOT:false");
+                        reply("set ANTI_BOT:false");
                         reply(".restart");
                         break;
                     default:
@@ -222,7 +222,69 @@ try {
     }
 });
 
+cmd({
+    pattern: "set",
+    alias: ["undefined"],
+    desc: "Check and update environment variables",
+    react: "⚙",
+    category: "owner",
+    filename: __filename,
+},
+async (conn, mek, m, { from, q, reply, isOwner }) => {
+    if (!isOwner) return;
 
+    if (!q) {
+        return reply("Please provide the setting and value in format: set SETTING:VALUE");
+    }
+
+    // Split input into key and value
+    const [key, value] = q.split(':').map(item => item.trim());
+
+    if (!key || !value) {
+        return reply("Invalid format. Please use: set SETTING:VALUE");
+    }
+
+    try {
+        switch (key) {
+            case 'MODE':
+                if (!['public', 'private', 'group', 'inbox'].includes(value.toLowerCase())) {
+                    return reply("Invalid mode. Use: public/private/group/inbox");
+                }
+                break;
+                
+            case 'AUTO_SONG_SENDER':
+            case 'AUTO_READ_STATUS':
+            case 'AI_CHAT':
+            case 'RECORDING':
+            case 'READ_CMD':
+            case 'ANTI_BAD':
+            case 'ANTI_LINK':
+            case 'ANTI_CALL':
+            case 'ANTI_DELETE':
+            case 'ANTI_BOT':
+                if (!['true', 'false'].includes(value.toLowerCase())) {
+                    return reply(`Invalid value for ${key}. Use: true/false`);
+                }
+                break;
+
+            default:
+                return reply("Invalid setting. Please check settings menu for available options.");
+        }
+
+        // Update the setting
+        try {
+            await updateEnv(key, value);
+            reply(`✅ Successfully updated ${key} to ${value}`);
+            reply(".restart");
+        } catch (err) {
+            reply(`Failed to update setting: ${err.message}`);
+        }
+
+    } catch (err) {
+        console.error('Error in set command:', err);
+        reply("An error occurred while processing your request.");
+    }
+});
 
 
 
