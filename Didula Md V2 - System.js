@@ -679,7 +679,6 @@ cmd({
 
 
 
-
 cmd({
     pattern: "song",
     alias: ["song2"],
@@ -688,7 +687,7 @@ cmd({
     category: "download",
     filename: __filename
 },
-async(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
+async(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, reply }) => {
 try {
     if (!q) return reply("*⚠️ Please provide a song title or URL*\n\n*Example:* .song Alan Walker - Faded");
 
@@ -699,47 +698,57 @@ try {
         return reply("❌ No results found! Please try another search.");
     }
 
-    const deta = search.videos[0];
-    const url = deta.url;
+    const video = search.videos[0];
+    const url = video.url;
 
-    let desc = `🎵 *Now Downloading:* ${deta.title}
+    let desc = `🎵 *Now Downloading:* ${video.title}
 
-🎧 *Duration:* ${deta.timestamp}
-👁️ *Views:* ${deta.views}
-📅 *Uploaded:* ${deta.ago}
-👤 *Author:* ${deta.author.name}
+🎧 *Duration:* ${video.timestamp}
+👁️ *Views:* ${video.views}
+📅 *Uploaded:* ${video.ago}
+👤 *Author:* ${video.author.name}
 
 ⏳ *Please wait, processing your request...*`;
 
     await conn.sendMessage(from, { 
-        image: { url: deta.thumbnail }, 
+        image: { url: video.thumbnail }, 
         caption: desc 
-    }, { quoted: mek }).catch(() => reply("❌ Error sending thumbnail"));
+    }, { quoted: mek }).catch(() => {});
 
-    try {
-        const response = await axios.get(`https://api.giftedtech.my.id/api/download/ytmp3?apikey=king_haki-k7gjd8@gifted_api&url=${encodeURIComponent(url)}`);
+    // Try multiple APIs in sequence
+    const apis = [
+        `https://vajira-official-api.vercel.app/download/ytmp3?url=${encodeURIComponent(url)}`,
+        `https://api.giftedtech.my.id/api/download/ytmp3?apikey=king_haki-k7gjd8@gifted_api&url=${encodeURIComponent(url)}`,
+        // Add more API endpoints as needed
+    ];
 
-        const downloadUrl = response.data.result.download_url;
+    for (const apiUrl of apis) {
+        try {
+            const response = await axios.get(apiUrl);
+            const downloadUrl = response.data.dl_link || response.data.result?.download_url;
 
-        await conn.sendMessage(from, { 
-            audio: { url: downloadUrl }, 
-            mimetype: "audio/mpeg", 
-            caption: "🎵 *Successfully Downloaded!*" 
-        }, { quoted: mek });
+            if (downloadUrl) {
+                await conn.sendMessage(from, { 
+                    audio: { url: downloadUrl }, 
+                    mimetype: "audio/mpeg"
+                }, { quoted: mek });
 
-        await conn.sendMessage(from, { 
-            document: { url: downloadUrl }, 
-            mimetype: "audio/mpeg", 
-            fileName: `${deta.title}.mp3`, 
-            caption: "📎 *Document Version*\n\n✨ *Thanks for using our service!*" 
-        }, { quoted: mek });
+                await conn.sendMessage(from, { 
+                    document: { url: downloadUrl }, 
+                    mimetype: "audio/mpeg", 
+                    fileName: `${video.title}.mp3`
+                }, { quoted: mek });
 
-    } catch (error) {
-        reply("❌ Error downloading audio: " + error.message);
+                return;
+            }
+        } catch (error) {
+            continue; // Try next API if current one fails
+        }
     }
 
+    reply("❌ Failed to download audio. Please try again later.");
+
 } catch (e) {
-    console.log(e);
     reply(`❌ Error: ${e.message}`);
 }
 });
@@ -752,7 +761,7 @@ cmd({
     category: "download",
     filename: __filename
 },
-async(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
+async(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, reply }) => {
 try {
     if (!q) return reply("*⚠️ Please provide a video title or URL*\n\n*Example:* .video Alan Walker - Faded");
 
@@ -763,50 +772,61 @@ try {
         return reply("❌ No results found! Please try another search.");
     }
 
-    const deta = search.videos[0];
-    const url = deta.url;
+    const video = search.videos[0];
+    const url = video.url;
 
-    let desc = `🎥 *Now Downloading:* ${deta.title}
+    let desc = `🎥 *Now Downloading:* ${video.title}
 
-⏱️ *Duration:* ${deta.timestamp}
-👁️ *Views:* ${deta.views}
-📅 *Uploaded:* ${deta.ago}
-👤 *Author:* ${deta.author.name}
+⏱️ *Duration:* ${video.timestamp}
+👁️ *Views:* ${video.views}
+📅 *Uploaded:* ${video.ago}
+👤 *Author:* ${video.author.name}
 
 ⏳ *Please wait, processing your request...*`;
 
     await conn.sendMessage(from, { 
-        image: { url: deta.thumbnail }, 
+        image: { url: video.thumbnail }, 
         caption: desc 
-    }, { quoted: mek }).catch(() => reply("❌ Error sending thumbnail"));
+    }, { quoted: mek }).catch(() => {});
 
-    try {
-        const response = await axios.get(`https://api.giftedtech.my.id/api/download/ytmp4?apikey=king_haki-k7gjd8@gifted_api&url=${encodeURIComponent(url)}`);
+    // Try multiple APIs in sequence
+    const apis = [
+        `https://www.dark-yasiya-api.site/download/ytmp4?url=${encodeURIComponent(url)}&quality=360`,
+        `https://restapi.apibotwa.biz.id/api/ytmp4?url=${encodeURIComponent(url)}`,
+        `https://api.giftedtech.my.id/api/download/ytmp4?apikey=king_haki-k7gjd8@gifted_api&url=${encodeURIComponent(url)}`
+    ];
 
-        const downloadUrl = response.data.result.download_url;
+    for (const apiUrl of apis) {
+        try {
+            const response = await axios.get(apiUrl);
+            const downloadUrl = response.data.download?.url || response.data.data?.download?.url || response.data.result?.download_url;
 
-        await conn.sendMessage(from, { 
-            video: { url: downloadUrl }, 
-            mimetype: "video/mp4", 
-            caption: "🎥 *Successfully Downloaded!*" 
-        }, { quoted: mek });
+            if (downloadUrl) {
+                await conn.sendMessage(from, { 
+                    video: { url: downloadUrl }, 
+                    mimetype: "video/mp4"
+                }, { quoted: mek });
 
-        await conn.sendMessage(from, { 
-            document: { url: downloadUrl }, 
-            mimetype: "video/mp4", 
-            fileName: `${deta.title}.mp4`, 
-            caption: "📎 *Document Version*\n\n✨ *Thanks for using our service!*" 
-        }, { quoted: mek });
+                await conn.sendMessage(from, { 
+                    document: { url: downloadUrl }, 
+                    mimetype: "video/mp4", 
+                    fileName: `${video.title}.mp4`
+                }, { quoted: mek });
 
-    } catch (error) {
-        reply("❌ Error downloading video: " + error.message);
+                return;
+            }
+        } catch (error) {
+            continue; // Try next API if current one fails
+        }
     }
 
+    reply("❌ Failed to download video. Please try again later.");
+
 } catch (e) {
-    console.log(e);
     reply(`❌ Error: ${e.message}`);
 }
 });
+
 
 
 cmd({
