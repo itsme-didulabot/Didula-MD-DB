@@ -24,20 +24,7 @@ const { updateEnv, readEnv } = require('../lib/database');
 
 const os = require("os")
 
-
-const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, jsonformat} = require('../lib/functions')
-
-const bugres = '𝙋𝙧𝙤𝙘𝙘𝙚𝙨 👾'
-
-const {
-    default: makeWASocket,
-    generateWAMessageFromContent,
-    proto
-} = require('@whiskeysockets/baileys')
-
-
-
-
+const { fetchJson, getBuffer } = require('../lib/functions');
 
 
 
