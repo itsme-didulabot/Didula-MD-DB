@@ -288,176 +288,100 @@ Reply with option number to change setting`;
 });
 
 
-cmd({
-    pattern: "movie",
-    desc: "Search and show top Sinhala subtitles for films.",
-    react: "🎬",
-    category: "download",
-    filename: __filename
-}, async (conn, mek, m, { from, q, reply }) => {
-    try {
-        if (!q || q.trim() === "") {
-            return reply("*⚠️ Please provide a movie name (E.g: .movie spider man)*");
-        }
+cmd({ 
+    pattern: "movie", 
+    alias: ["film", "cinema"], 
+    react: "🎬", 
+    desc: "Download Movies with Sinhala Subtitles", 
+    category: "main", 
+    use: '.movie <movie name>', 
+    filename: __filename 
+}, async (conn, mek, m, { from, prefix, quoted, q, reply }) => { 
+    try { 
+        if (!q) return await reply("⚠️ Please provide a movie name!");
 
-        const searchUrl = `https://omindu-api.up.railway.app/api/sinhalasub/search?query=${encodeURIComponent(q)}`;
+        // Search for the movie
+        let searchUrl = `https://omindu-api.up.railway.app/api/sinhalasub/search?query=${encodeURIComponent(q)}`;
+        let searchResponse = await fetch(searchUrl);
+        let searchData = await searchResponse.json();
 
-        const fetchData = async (url, retries = 3) => {
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const response = await axios.get(url, { timeout: 10000 });
-                    return response.data;
-                } catch (error) {
-                    if (i === retries - 1) throw error;
-                    await new Promise(r => setTimeout(r, 2000));
+        if (!searchData.results.movies || searchData.results.movies.length < 1) 
+            return reply("❌ No movies found!");
+
+        let movie = searchData.results.movies[0];
+        
+        // Get download links
+        let downloadUrl = `https://omindu-api.up.railway.app/api/sinhalasub/download?url=${encodeURIComponent(movie.link)}`;
+        let downloadResponse = await fetch(downloadUrl);
+        let downloadData = await downloadResponse.json();
+
+        let movieInfo = downloadData.info;
+        let downloadLinks = downloadData.dl_links;
+
+        let message = `╭━━━〔 *🌟 MOVIE DOWNLOADER 🌟* 〕━━━┈⊷
+┃▸╭─────────────────
+┃▸┃ 🎬 *MOVIE DETAILS*
+┃▸└─────────────────···
+╰──────────────────────┈⊷
+╭━━❐━⪼
+┇📌 *Title:* ${movieInfo.title}
+┇📅 *Release Date:* ${movieInfo.release_date}
+┇⏱️ *Runtime:* ${movieInfo.runtime}
+┇⭐ *TMDB Rating:* ${movieInfo.tmdb_Rating}
+┇🎭 *Genres:* ${movieInfo.genres.join(", ")}
+┇👨‍💼 *Director:* ${movieInfo.director.name}
+╰━━❑━⪼
+
+*Available Qualities:*
+1️⃣ FHD 1080p (${downloadLinks.server_02[0].size})
+2️⃣ HD 720p (${downloadLinks.server_02[1].size})
+3️⃣ SD 480p (${downloadLinks.server_02[2].size})
+
+Reply with number (1-3) to download your preferred quality.`;
+
+        // Send movie poster and details
+        await conn.sendMessage(from, { 
+            image: { url: movieInfo.poster }, 
+            caption: message 
+        }, { quoted: mek });
+
+        // Wait for user response
+        const filter = m => m.quoted && m.quoted.id === mek.key.id;
+        conn.awaitMessages(from, filter, { max: 1, time: 30000, errors: ['time'] })
+            .then(async collected => {
+                const response = collected.first().text;
+                let selectedQuality;
+
+                switch(response) {
+                    case '1':
+                        selectedQuality = 0; // 1080p
+                        break;
+                    case '2':
+                        selectedQuality = 1; // 720p
+                        break;
+                    case '3':
+                        selectedQuality = 2; // 480p
+                        break;
+                    default:
+                        return reply("❌ Invalid selection. Please choose 1, 2, or 3.");
                 }
-            }
-        };
 
-        const data = await fetchData(searchUrl);
-
-        if (!data?.results?.movies?.length && !data?.results?.tvshows?.length) {
-            return reply("*⚠️ No results found. Try with a different name or include the year*");
-        }
-
-        const allResults = [...(data.results.movies || []), ...(data.results.tvshows || [])];
-        const topResults = allResults.slice(0, 20);
-
-        const resultsList = topResults.map((item, index) => {
-            return `${index + 1}. 🎬 *${item.title}*\n   ⭐ ${item.rating || 'N/A'} | 📅 ${item.year} | 📺 ${item.type}`;
-        }).join("\n\n");
-
-        const msg = `🎥 *Search Results*\n\n🔍 *Query:* ${q}\n\n${resultsList}\n\n📝 *Reply with a number (1-${topResults.length}) to select*`;
-
-        const sentMsg = await conn.sendMessage(from, { text: msg }, { quoted: mek });
-
-        conn.ev.once("messages.upsert", async ({ messages }) => {
-            const response = messages[0];
-            if (!response?.message) return;
-
-            const userReply = response.message.conversation || response.message.extendedTextMessage?.text;
-            const isReplyToBot = response.message.extendedTextMessage?.contextInfo?.stanzaId === sentMsg.key.id;
-
-            if (!isReplyToBot || !/^\d+$/.test(userReply)) return;
-
-            const selectedIndex = parseInt(userReply) - 1;
-            if (selectedIndex < 0 || selectedIndex >= topResults.length) {
-                return reply("*❌ Invalid selection*");
-            }
-
-            const selectedItem = topResults[selectedIndex];
-
-            try {
-                const movieDetails = await fetchData(`https://omindu-api.up.railway.app/api/sinhalasub/download?url=${selectedItem.link}`);
-
-                if (!movieDetails?.result) {
-                    throw new Error("Failed to fetch details");
-                }
-
-                const movie = movieDetails.result;
-
-                const detailsMsg = `🎬 *${movie.title}*
-
-${movie.tagline ? `*" ${movie.tagline} "*\n\n` : ''}*📅 Release:* ${movie.release_date || 'N/A'}
-*⭐ IMDb:* ${movie.imdb_rating}
-*🌟 TMDB:* ${movie.tmdb_Rating || 'N/A'}/10
-*⏱️ Runtime:* ${movie.runtime || 'N/A'}
-*🌍 Country:* ${movie.country || 'N/A'}
-*🎭 Genre:* ${movie.genres.join(", ")}
-
-*👨‍💼 Director:* ${movie.director.name}
-
-*📝 Description:*
-${movie.description}
-
-*👥 Cast:*
-${movie.cast.map(actor => `• ${actor.name} ${actor.character !== 'N/A' ? `as ${actor.character}` : ''}`).join("\n")}`;
-
-                await conn.sendMessage(from, {
-                    image: { url: movie.poster },
-                    caption: detailsMsg
+                // Send selected quality
+                await conn.sendMessage(from, { 
+                    document: { url: downloadLinks.server_03[selectedQuality].link }, 
+                    mimetype: "video/mp4", 
+                    fileName: `${movieInfo.title} [${downloadLinks.server_02[selectedQuality].quality}].mp4`, 
+                    caption: `🎬 *${movieInfo.title}*\n📺 Quality: ${downloadLinks.server_02[selectedQuality].quality}\n💾 Size: ${downloadLinks.server_02[selectedQuality].size}\n\n🔗 Mega Link: ${downloadLinks.server_02[selectedQuality].link}\n\n*🌟 Created By:* Didula Rashmika\n*🤖 Bot:* Didula MD V2`
                 }, { quoted: mek });
 
-                if (movie.dl_links) {
-                    const allLinks = [];
-                    
-                    // Organize all download links
-                    Object.entries(movie.dl_links).forEach(([server, links]) => {
-                        links.forEach(link => {
-                            allLinks.push({
-                                ...link,
-                                server: server
-                            });
-                        });
-                    });
+            })
+            .catch(() => {
+                reply("⏳ Time expired. Please try again.");
+            });
 
-                    const downloadOptions = `
-╭━─━─━─≪📥≫─━─━─━╮
-│ *DOWNLOAD OPTIONS*
-│
-${allLinks.map((link, index) => `│ ${index + 1}. *${link.quality}*
-│    📦 Size: ${link.size}
-│    🔗 Server: ${link.server}`).join('\n│\n')}
-│
-│ 📌 *Reply with number to download*
-╰━─━─━─≪📥≫─━─━─━╯`;
-
-                    const dlMsg = await conn.sendMessage(from, { text: downloadOptions }, { quoted: mek });
-
-                    conn.ev.once("messages.upsert", async ({ messages }) => {
-                        const dlResponse = messages[0];
-                        if (!dlResponse?.message) return;
-
-                        const dlReply = dlResponse.message.conversation || dlResponse.message.extendedTextMessage?.text;
-                        const isDlReplyToBot = dlResponse.message.extendedTextMessage?.contextInfo?.stanzaId === dlMsg.key.id;
-
-                        if (!isDlReplyToBot || !/^\d+$/.test(dlReply)) return;
-
-                        const dlIndex = parseInt(dlReply) - 1;
-                        if (dlIndex < 0 || dlIndex >= allLinks.length) {
-                            return reply("*❌ Invalid download option*");
-                        }
-
-                        const selectedLink = allLinks[dlIndex];
-
-                        await conn.sendMessage(from, { react: { text: "⬇️", key: dlResponse.key }});
-
-                        try {
-                            await conn.sendMessage(from, {
-                                document: { url: selectedLink.link },
-                                fileName: `${movie.title} [${selectedLink.quality}].mp4`,
-                                mimetype: "video/mp4",
-                                caption: `🎬 *${movie.title}*\n📊 Quality: ${selectedLink.quality}\n📦 Size: ${selectedLink.size}\n🔗 Server: ${selectedLink.server}`
-                            }, { quoted: mek });
-
-                            await conn.sendMessage(from, { react: { text: "✅", key: dlResponse.key }});
-                        } catch (error) {
-                            await conn.sendMessage(from, { react: { text: "❌", key: dlResponse.key }});
-                            await conn.sendMessage(from, {
-                                text: `*⚠️ Direct download failed*\n\n*Here's your download link:*\n${selectedLink.link}`,
-                                quoted: mek
-                            });
-                        }
-                    });
-                }
-
-                if (movie.image_urls?.length) {
-                    for (const imageUrl of movie.image_urls) {
-                        await conn.sendMessage(from, {
-                            image: { url: imageUrl }
-                        });
-                    }
-                }
-
-            } catch (error) {
-                reply("*❌ Failed to fetch details. Please try again later.*");
-                console.error(error);
-            }
-        });
-
-    } catch (error) {
-        reply("*❌ An error occurred. Please try again later.*");
-        console.error(error);
+    } catch (e) {
+        console.log(e);
+        reply("❌ An error occurred. Please try again later.");
     }
 });
 
