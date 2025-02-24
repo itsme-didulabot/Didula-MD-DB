@@ -291,9 +291,9 @@ cmd({
     pattern: "movie", 
     alias: ["film", "cinema"], 
     react: "🎬", 
-    desc: "Download Movies with Sinhala Subtitles", 
+    desc: "Search and Download Movies with Sinhala Subtitles", 
     category: "main", 
-    use: '.movie <movie name>', 
+    use: '.movie < Movie Name >', 
     filename: __filename 
 }, async (conn, mek, m, { from, prefix, quoted, q, reply }) => { 
     try { 
@@ -308,14 +308,14 @@ cmd({
             return reply("❌ No movies found!");
 
         let movie = searchData.results.movies[0];
-        
+
         // Get download links
         let downloadUrl = `https://omindu-api.up.railway.app/api/sinhalasub/download?url=${encodeURIComponent(movie.link)}`;
         let downloadResponse = await fetch(downloadUrl);
         let downloadData = await downloadResponse.json();
 
         let movieInfo = downloadData.info;
-        let downloads = downloadData.dl_links;
+        let dlLinks = downloadData.dl_links;
 
         let movieMsg = `╭━━━〔 *🌟 DIDULA MD V2 🌟* 〕━━━┈⊷
 ┃▸╭─────────────────
@@ -324,41 +324,35 @@ cmd({
 ╰──────────────────────┈⊷
 ╭━━❐━⪼
 ┇📌 *Title:* ${movieInfo.title}
-┇📅 *Release:* ${movieInfo.release_date}
+┇📅 *Release Date:* ${movieInfo.release_date}
 ┇⏱️ *Runtime:* ${movieInfo.runtime}
-┇⭐ *TMDB:* ${movieInfo.tmdb_Rating}
+┇⭐ *TMDB Rating:* ${movieInfo.tmdb_Rating}
 ┇🎭 *Genres:* ${movieInfo.genres.join(", ")}
-┇👨‍💼 *Director:* ${movieInfo.director.name}
+┇🎬 *Director:* ${movieInfo.director.name}
 ╰━━❑━⪼
 
-*💫 Download Links:*
-${downloads.server_02.map(dl => `
-🎬 *${dl.quality}* (${dl.size})
-${dl.link}`).join('\n')}
+📥 *Download Links:*
 
-*💫 Alternative Links:*
-${downloads.server_03.map(dl => `
-🎬 *${dl.quality}* (${dl.size})
-${dl.link}`).join('\n')}
+*Server 1:*
+${dlLinks.server_01.map(link => `▢ ${link.quality} (${link.size})\n${link.link}`).join('\n\n')}
 
-*🌟 Created By:* Didula Rashmika
-*🤖 Bot:* Didula MD V2`;
+*Telegram:*
+${dlLinks.telagram.map(link => `▢ ${link.quality} (${link.size})\n${link.link}`).join('\n\n')}
 
-        // Send movie poster and info
+*Server 2:*
+${dlLinks.server_02.map(link => `▢ ${link.quality} (${link.size})\n${link.link}`).join('\n\n')}
+
+*Server 3:*
+${dlLinks.server_03.map(link => `▢ ${link.quality} (${link.size})\n${link.link}`).join('\n\n')}
+
+*Type . dl <download link> for download movie 💗😚*
+
+*💫 Quality Movie Downloader By Didula MD V2*`;
+
         await conn.sendMessage(from, { 
             image: { url: movieInfo.poster }, 
             caption: movieMsg 
         }, { quoted: mek });
-
-        // Send movie as document with different qualities
-        for (let dl of downloads.server_02) {
-            await conn.sendMessage(from, { 
-                document: { url: dl.link }, 
-                mimetype: "video/mp4", 
-                fileName: `${movieInfo.title} [${dl.quality}].mp4`, 
-                caption: `🎬 *${movieInfo.title}* - ${dl.quality}\n\n*🌟 Created By:* Didula Rashmika\n*🤖 Bot:* Didula MD V2`
-            }, { quoted: mek });
-        }
 
     } catch (e) {
         console.log(e);
