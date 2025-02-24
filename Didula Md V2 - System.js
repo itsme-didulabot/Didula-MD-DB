@@ -64,7 +64,7 @@ async (conn, mek, m, { from, q, reply, isOwner }) => {
 
             await updateEnv(key, value);
             reply(`✅ Updated ${key} to ${value}`);
-            return reply(".restart");
+            return reply("Type .restart for get new update ");
         }
 
         // Display settings menu
@@ -177,7 +177,7 @@ Reply with option number to change setting`;
             if (settings[option]) {
                 const [setting, value] = settings[option];
                 await reply(`.set ${setting}:${value}`);
-                await reply(".restart");
+                await reply("Type .restart for get new update ");
             } else {
                 reply("Invalid option selected!");
             }
