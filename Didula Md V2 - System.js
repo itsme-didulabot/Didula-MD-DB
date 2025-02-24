@@ -26,14 +26,49 @@ const os = require("os")
 
 cmd({
     pattern: "settings",
-    alias: ["setting"],
-    desc: "settings the bot",
+    alias: ["setting", "set"],
+    desc: "Bot settings management",
     react: "⚙️",
     category: "owner"
 },
-async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
-try {                            
-        let desc = `┏━━━━━━━━━━━━━━━━━━━━━━━┓
+async (conn, mek, m, { from, q, reply, isOwner }) => {
+    if (!isOwner) return reply("Owner only command!");
+
+    try {
+        // Handle direct setting changes if command is "set"
+        if (q && m.command === "set") {
+            const [key, value] = q.split(':').map(item => item.trim());
+            if (!key || !value) return reply("Format: set SETTING:VALUE");
+
+            const validSettings = {
+                MODE: ['public', 'private', 'group', 'inbox'],
+                AUTO_SONG_SENDER: ['true', 'false'],
+                AUTO_READ_STATUS: ['true', 'false'],
+                AI_CHAT: ['true', 'false'],
+                RECORDING: ['true', 'false'],
+                READ_CMD: ['true', 'false'],
+                ANTI_BAD: ['true', 'false'],
+                ANTI_LINK: ['true', 'false'],
+                ANTI_CALL: ['true', 'false'],
+                ANTI_DELETE: ['true', 'false'],
+                ANTI_BOT: ['true', 'false']
+            };
+
+            if (!validSettings[key]) {
+                return reply("Invalid setting! Check settings menu.");
+            }
+
+            if (!validSettings[key].includes(value.toLowerCase())) {
+                return reply(`Invalid value for ${key}! Valid values: ${validSettings[key].join('/')}`);
+            }
+
+            await updateEnv(key, value);
+            reply(`✅ Updated ${key} to ${value}`);
+            return reply(".restart");
+        }
+
+        // Display settings menu
+        const desc = `┏━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃       ⚙️ *Didula MD V2* ⚙️
 ┃━━━━━━━━━━━━━━━━━━━━━━━┃
 ┣━💼 *Work Mode* : *𝙿𝚄𝙱𝙻𝙸𝙲🌎/𝙿𝚁𝙸𝚅𝙰𝚃𝙴/𝙸𝙽𝙱𝙾𝚇/𝙶𝚁𝙾𝚄𝙿*
@@ -47,245 +82,126 @@ try {
 ┣━📞 *Anti Call* : *♻️ 𝙾𝙽/𝙾𝙵𝙵*
 ┣━🗑️ *Anti Delete* : *♻️ 𝙾𝙽/𝙾𝙵𝙵*
 ┣━🤖 *Anti Bot* : *♻️ 𝙾𝙽/𝙾𝙵𝙵*
-┃━━━━━━━━━━━━━━━━━━━━━━━┃
-┃      🔗  *CUSTOMIZE YOUR SETTINGS* ⤵️
 ┗━━━━━━━━━━━━━━━━━━━━━━━┛
 
-┏━━━━━━━━━━━━━━━━━━━━━━━┓
-┃       🔧 *OPTIONS MENU* 🔧
-┃━━━━━━━━━━━━━━━━━━━━━━━┃
+*Available Options:*
 
-┣━ *_WORK MODE_* ⤵️
-┃   ┣ 1.1 🔹 *Public Work*
-┃   ┣ 1.2 🔹 *Private Work*
-┃   ┣ 1.3 🔹 *Group Only*
-┃   ┗ 1.4 🔹 *Inbox Only*
+1️⃣ *Work Mode*
+   1.1 🌐 Public
+   1.2 🔒 Private 
+   1.3 👥 Group Only
+   1.4 💬 Inbox Only
 
-┣━ *_AUTO SONG_* ⤵️
-┃   ┣ 2.1 🎵 *Auto Song On*
-┃   ┗ 2.2 🎵❌ *Auto Song Off*
+2️⃣ *Auto Song*
+   2.1 ✅ On
+   2.2 ❌ Off
 
-┣━ *_AUTO STATUS SEEN_* ⤵️
-┃   ┣ 3.1 👁️‍🗨️ *Auto Read Status On*
-┃   ┗ 3.2 👁️❌ *Auto Read Status Off*
+3️⃣ *Auto Status*
+   3.1 ✅ On
+   3.2 ❌ Off
 
-┣━ *_AI CHAT_* ⤵️
-┃   ┣ 4.1 🤖 *AI Chat On*
-┃   ┗ 4.2 🤖❌ *AI Chat Off*
+4️⃣ *AI Chat*
+   4.1 ✅ On
+   4.2 ❌ Off
 
-┣━ *_RECORDING_* ⤵️
-┃   ┣ 5.1 🎙️ *Recording On*
-┃   ┗ 5.2 🎙️❌ *Recording Off*
+5️⃣ *Recording*
+   5.1 ✅ On
+   5.2 ❌ Off
 
-┣━ *_READ COMMAND_* ⤵️
-┃   ┣ 6.1 📝 *Read Command On*
-┃   ┗ 6.2 📝❌ *Read Command Off*
+6️⃣ *Read Command*
+   6.1 ✅ On
+   6.2 ❌ Off
 
-┣━ *_ANTI BAD_* ⤵️
-┃   ┣ 7.1 🚫 *Anti Bad On*
-┃   ┗ 7.2 ✅ *Anti Bad Off*
+7️⃣ *Anti Bad*
+   7.1 ✅ On
+   7.2 ❌ Off
 
-┣━ *_ANTI LINK_* ⤵️
-┃   ┣ 8.1 🔗❌ *Anti Link On*
-┃   ┗ 8.2 🔗 *Anti Link Off*
+8️⃣ *Anti Link*
+   8.1 ✅ On
+   8.2 ❌ Off
 
-┣━ *_ANTI CALL_* ⤵️
-┃   ┣ 9.1 📞❌ *Anti Call On*
-┃   ┗ 9.2 📞 *Anti Call Off*
+9️⃣ *Anti Call*
+   9.1 ✅ On
+   9.2 ❌ Off
 
-┣━ *_ANTI DELETE_* ⤵️
-┃   ┣ 10.1 🗑️❌ *Anti Delete On*
-┃   ┗ 10.2 🗑️ *Anti Delete Off*
+🔟 *Anti Delete*
+   10.1 ✅ On
+   10.2 ❌ Off
 
-┣━ *_ANTI BOT_* ⤵️
-┃   ┣ 11.1 🤖❌ *Anti Bot On*
-┃   ┗ 11.2 🤖 *Anti Bot Off*
-┗━━━━━━━━━━━━━━━━━━━━━━━┛
-`;
+1️⃣1️⃣ *Anti Bot*
+    11.1 ✅ On
+    11.2 ❌ Off
 
-        const vv = await conn.sendMessage(from, { image: { url: config.ALIVE_IMG }, caption: desc }, { quoted: mek });
+Reply with option number to change setting`;
 
-        conn.ev.on('messages.upsert', async (msgUpdate) => {
-            const msg = msgUpdate.messages[0];
-            if (!msg.message || !msg.message.extendedTextMessage) return;
+        const vv = await conn.sendMessage(from, { 
+            image: { url: config.ALIVE_IMG }, 
+            caption: desc 
+        }, { quoted: mek });
 
-            const selectedOption = msg.message.extendedTextMessage.text.trim();
+        // Settings option mapping
+        const settings = {
+            '1.1': ['MODE', 'public'],
+            '1.2': ['MODE', 'private'],
+            '1.3': ['MODE', 'group'],
+            '1.4': ['MODE', 'inbox'],
+            '2.1': ['AUTO_SONG_SENDER', 'true'],
+            '2.2': ['AUTO_SONG_SENDER', 'false'],
+            '3.1': ['AUTO_READ_STATUS', 'true'],
+            '3.2': ['AUTO_READ_STATUS', 'false'],
+            '4.1': ['AI_CHAT', 'true'],
+            '4.2': ['AI_CHAT', 'false'],
+            '5.1': ['RECORDING', 'true'],
+            '5.2': ['RECORDING', 'false'],
+            '6.1': ['READ_CMD', 'true'],
+            '6.2': ['READ_CMD', 'false'],
+            '7.1': ['ANTI_BAD', 'true'],
+            '7.2': ['ANTI_BAD', 'false'],
+            '8.1': ['ANTI_LINK', 'true'],
+            '8.2': ['ANTI_LINK', 'false'],
+            '9.1': ['ANTI_CALL', 'true'],
+            '9.2': ['ANTI_CALL', 'false'],
+            '10.1': ['ANTI_DELETE', 'true'],
+            '10.2': ['ANTI_DELETE', 'false'],
+            '11.1': ['ANTI_BOT', 'true'],
+            '11.2': ['ANTI_BOT', 'false']
+        };
 
-            if (msg.message.extendedTextMessage.contextInfo && msg.message.extendedTextMessage.contextInfo.stanzaId === vv.key.id) {
-                switch (selectedOption) {
-                    case '1.1':
-                        reply(".set MODE:public" );
-                        reply(".restart");
-                        break;
-                    case '1.2':               
-                        reply(".set MODE:private");
-                        reply(".restart");
-                        break;
-                    case '1.3':               
-                        reply(".set MODE:group");
-                        reply(".restart");
-                        break;
-                    case '1.4':     
-                        reply(".set MODE:inbox");
-                        reply(".restart");
-                        break;
-                    case '2.1':     
-                        reply(".set AUTO_SONG_SENDER:true");
-                        reply(".restart");
-                        break;
-                    case '2.2':     
-                        reply(".set AUTO_SONG_SENDER:false");
-                        reply(".restart");
-                        break;
-                    case '3.1':    
-                        reply(".set AUTO_READ_STATUS:true");
-                        reply(".restart");
-                        break;
-                    case '3.2':    
-                        reply(".set AUTO_READ_STATUS:false");
-                        reply(".restart");
-                        break;
-                    case '4.1': 
-                        reply(".set AI_CHAT:true");
-                        reply(".restart");
-                        break;
-                    case '4.2': 
-                        reply(".set AI_CHAT:false");
-                        reply(".restart");
-                        break;
-                    case '5.1': 
-                        reply(".set RECORDING:true");
-                        reply(".restart");
-                        break;
-                    case '5.2': 
-                        reply(".set RECORDING:false");
-                        reply(".restart");
-                        break;
-                    case '6.1':      
-                        reply(".set READ_CMD:true");
-                        reply(".restart");
-                        break;
-                    case '6.2':   
-                        reply(".set READ_CMD:false");
-                        reply(".restart");
-                        break;
-                    case '7.1': 
-                        reply(".set ANTI_BAD:true");
-                        reply(".restart");
-                        break;
-                    case '7.2':   
-                        reply(".set ANTI_BAD:false");
-                        reply(".restart");
-                        break;
-                    case '8.1': 
-                        reply(".set ANTI_LINK:true");
-                        reply(".restart");
-                        break;
-                    case '8.2':   
-                        reply(".set ANTI_LINK:false");
-                        reply(".restart");
-                        break;
-                    case '9.1': 
-                        reply(".set ANTI_CALL:true");
-                        reply(".restart");
-                        break;
-                    case '9.2':   
-                        reply(".set ANTI_CALL:false");
-                        reply(".restart");
-                        break;
-                    case '10.1': 
-                        reply(".set ANTI_DELETE:true");
-                        reply(".restart");
-                        break;
-                    case '10.2':   
-                        reply(".set ANTI_DELETE:false");
-                        reply(".restart");
-                        break;
-                    case '11.1': 
-                        reply(".set ANTI_BOT:true");
-                        reply(".restart");
-                        break;
-                    case '11.2':   
-                        reply(".set ANTI_BOT:false");
-                        reply(".restart");
-                        break;
-                    default:
-                        reply("Invalid option. Please select a valid option🔴");
-                }
+        // Handle option selection
+        const optionHandler = async (msg) => {
+            if (!msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) return;
+            if (msg.message.extendedTextMessage.contextInfo.stanzaId !== vv.key.id) return;
+
+            const option = msg.message.extendedTextMessage.text?.trim();
+            
+            if (settings[option]) {
+                const [setting, value] = settings[option];
+                await reply(`.set ${setting}:${value}`);
+                await reply(".restart");
+            } else {
+                reply("Invalid option selected!");
             }
-        });
+        };
 
-    } catch (e) {
-        console.error(e);
-        await conn.sendMessage(from, { react: { text: '❌', key: mek.key } })
-        reply('An error occurred while processing your request.');
+        // Set up message listener
+        const messageHandler = ({ messages }) => {
+            const msg = messages[0];
+            optionHandler(msg);
+        };
+
+        conn.ev.on('messages.upsert', messageHandler);
+
+        // Clean up listener after 5 minutes
+        setTimeout(() => {
+            conn.ev.off('messages.upsert', messageHandler);
+        }, 300000);
+
+    } catch (error) {
+        console.error(error);
+        await conn.sendMessage(from, { react: { text: '❌', key: mek.key }});
+        reply('Error processing request.');
     }
 });
-
-cmd({
-    pattern: "set",
-    alias: ["undefined"],
-    desc: "Check and update environment variables",
-    react: "⚙",
-    category: "owner",
-    filename: __filename,
-},
-async (conn, mek, m, { from, q, reply, isOwner }) => {
-    if (!isOwner) return;
-
-    if (!q) {
-        return reply("Please provide the setting and value in format: set SETTING:VALUE");
-    }
-
-    // Split input into key and value
-    const [key, value] = q.split(':').map(item => item.trim());
-
-    if (!key || !value) {
-        return reply("Invalid format. Please use: set SETTING:VALUE");
-    }
-
-    try {
-        switch (key) {
-            case 'MODE':
-                if (!['public', 'private', 'group', 'inbox'].includes(value.toLowerCase())) {
-                    return reply("Invalid mode. Use: public/private/group/inbox");
-                }
-                break;
-                
-            case 'AUTO_SONG_SENDER':
-            case 'AUTO_READ_STATUS':
-            case 'AI_CHAT':
-            case 'RECORDING':
-            case 'READ_CMD':
-            case 'ANTI_BAD':
-            case 'ANTI_LINK':
-            case 'ANTI_CALL':
-            case 'ANTI_DELETE':
-            case 'ANTI_BOT':
-                if (!['true', 'false'].includes(value.toLowerCase())) {
-                    return reply(`Invalid value for ${key}. Use: true/false`);
-                }
-                break;
-
-            default:
-                return reply("Invalid setting. Please check settings menu for available options.");
-        }
-
-        // Update the setting
-        try {
-            await updateEnv(key, value);
-            reply(`✅ Successfully updated ${key} to ${value}`);
-            reply(".restart");
-        } catch (err) {
-            reply(`Failed to update setting: ${err.message}`);
-        }
-
-    } catch (err) {
-        console.error('Error in set command:', err);
-        reply("An error occurred while processing your request.");
-    }
-});
-
 
 
 cmd({
