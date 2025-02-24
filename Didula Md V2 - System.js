@@ -114,99 +114,99 @@ try {
             if (msg.message.extendedTextMessage.contextInfo && msg.message.extendedTextMessage.contextInfo.stanzaId === vv.key.id) {
                 switch (selectedOption) {
                     case '1.1':
-                        reply("set MODE:public" );
+                        reply(".set MODE:public" );
                         reply(".restart");
                         break;
                     case '1.2':               
-                        reply("set MODE:private");
+                        reply(".set MODE:private");
                         reply(".restart");
                         break;
                     case '1.3':               
-                        reply("set MODE:group");
+                        reply(".set MODE:group");
                         reply(".restart");
                         break;
                     case '1.4':     
-                        reply("set MODE:inbox");
+                        reply(".set MODE:inbox");
                         reply(".restart");
                         break;
                     case '2.1':     
-                        reply("set AUTO_SONG_SENDER:true");
+                        reply(".set AUTO_SONG_SENDER:true");
                         reply(".restart");
                         break;
                     case '2.2':     
-                        reply("set AUTO_SONG_SENDER:false");
+                        reply(".set AUTO_SONG_SENDER:false");
                         reply(".restart");
                         break;
                     case '3.1':    
-                        reply("set AUTO_READ_STATUS:true");
+                        reply(".set AUTO_READ_STATUS:true");
                         reply(".restart");
                         break;
                     case '3.2':    
-                        reply("set AUTO_READ_STATUS:false");
+                        reply(".set AUTO_READ_STATUS:false");
                         reply(".restart");
                         break;
                     case '4.1': 
-                        reply("set AI_CHAT:true");
+                        reply(".set AI_CHAT:true");
                         reply(".restart");
                         break;
                     case '4.2': 
-                        reply("set AI_CHAT:false");
+                        reply(".set AI_CHAT:false");
                         reply(".restart");
                         break;
                     case '5.1': 
-                        reply("set RECORDING:true");
+                        reply(".set RECORDING:true");
                         reply(".restart");
                         break;
                     case '5.2': 
-                        reply("set RECORDING:false");
+                        reply(".set RECORDING:false");
                         reply(".restart");
                         break;
                     case '6.1':      
-                        reply("set READ_CMD:true");
+                        reply(".set READ_CMD:true");
                         reply(".restart");
                         break;
                     case '6.2':   
-                        reply("set READ_CMD:false");
+                        reply(".set READ_CMD:false");
                         reply(".restart");
                         break;
                     case '7.1': 
-                        reply("set ANTI_BAD:true");
+                        reply(".set ANTI_BAD:true");
                         reply(".restart");
                         break;
                     case '7.2':   
-                        reply("set ANTI_BAD:false");
+                        reply(".set ANTI_BAD:false");
                         reply(".restart");
                         break;
                     case '8.1': 
-                        reply("set ANTI_LINK:true");
+                        reply(".set ANTI_LINK:true");
                         reply(".restart");
                         break;
                     case '8.2':   
-                        reply("set ANTI_LINK:false");
+                        reply(".set ANTI_LINK:false");
                         reply(".restart");
                         break;
                     case '9.1': 
-                        reply("set ANTI_CALL:true");
+                        reply(".set ANTI_CALL:true");
                         reply(".restart");
                         break;
                     case '9.2':   
-                        reply("set ANTI_CALL:false");
+                        reply(".set ANTI_CALL:false");
                         reply(".restart");
                         break;
                     case '10.1': 
-                        reply("set ANTI_DELETE:true");
+                        reply(".set ANTI_DELETE:true");
                         reply(".restart");
                         break;
                     case '10.2':   
-                        reply("set ANTI_DELETE:false");
+                        reply(".set ANTI_DELETE:false");
                         reply(".restart");
                         break;
                     case '11.1': 
-                        reply("set ANTI_BOT:true");
+                        reply(".set ANTI_BOT:true");
                         reply(".restart");
                         break;
                     case '11.2':   
-                        reply("set ANTI_BOT:false");
+                        reply(".set ANTI_BOT:false");
                         reply(".restart");
                         break;
                     default:
@@ -285,8 +285,6 @@ async (conn, mek, m, { from, q, reply, isOwner }) => {
         reply("An error occurred while processing your request.");
     }
 });
-
-
 
 
 
