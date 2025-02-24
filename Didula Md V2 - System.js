@@ -681,156 +681,192 @@ cmd({
 
 cmd({
     pattern: "song",
-    alias: ["song2"],
     react: "🎵",
-    desc: "download",
+    desc: "Download song",
     category: "download",
     filename: __filename
-},
-async(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
-try {
-    if (!q) return reply("*⚠️ Please provide a song title or URL*\n\n*Example:* .song Alan Walker - Faded");
-
-    const query = String(q);
-    const search = await yts(query);
-
-    if (!search.videos || !search.videos.length) {
-        return reply("❌ No results found! Please try another search.");
-    }
-
-    const deta = search.videos[0];
-    const url = deta.url;
-
-    let desc = `🎵 *Now Downloading:* ${deta.title}
-
-🎧 *Duration:* ${deta.timestamp}
-👁️ *Views:* ${deta.views}
-📅 *Uploaded:* ${deta.ago}
-👤 *Author:* ${deta.author.name}
-
-⏳ *Please wait, processing your request...*`;
-
-    await conn.sendMessage(from, { 
-        image: { url: deta.thumbnail }, 
-        caption: desc 
-    }, { quoted: mek }).catch(() => reply("❌ Error sending thumbnail"));
-
+}, async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
     try {
-        // Try primary API (Vajira API)
-        let downloadUrl;
-        try {
-            const response1 = await axios.get(`https://vajira-official-api.vercel.app/download/ytmp3?url=${encodeURIComponent(url)}`);
-            downloadUrl = response1.data.dl_link;
-        } catch {
-            // Fallback to David Cyril API
-            try {
-                const response2 = await axios.get(`https://apis.davidcyriltech.my.id/download/ytmp3?url=${encodeURIComponent(url)}`);
-                downloadUrl = response2.data.result.download_url;
-            } catch {
-                // Final fallback
-                const response3 = await axios.get(`https://api.giftedtech.my.id/api/download/ytmp3?apikey=king_haki-k7gjd8@gifted_api&url=${encodeURIComponent(url)}`);
-                downloadUrl = response3.data.result.download_url;
-            }
+        if (!q) return reply("*❌ Please provide a URL or title*");
+
+        // API 1: https://www.dark-yasiya-api.site/download/ytmp4
+        const api1Url = `https://www.dark-yasiya-api.site/download/ytmp4?url=${q}&quality=best`;
+        const api1Response = await fetch(api1Url);
+        const api1Data = await api1Response.json();
+
+        if (api1Data.download) {
+            const { title, thumbnail, download } = api1Data;
+            const { url, filename } = download;
+
+            let desc = `ᴅɪᴅᴜʟᴀ ᴍᴅ ᴠ2 ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴛʜɪꜱ ꜱᴏɴɢ - \n*${title} 💚*`;
+
+            await conn.sendMessage(from, { image: { url: thumbnail }, caption: desc }, { quoted: mek });
+            await conn.sendMessage(from, { audio: { url }, mimetype: "audio/mpeg", caption: "*©ᴅɪᴅᴜʟᴀ ᴍᴅ ᴠ2💚*" }, { quoted: mek });
+            await conn.sendMessage(from, { document: { url }, mimetype: "audio/mpeg", fileName: `${filename}` }, { quoted: mek });
+            return;
         }
 
-        await conn.sendMessage(from, { 
-            audio: { url: downloadUrl }, 
-            mimetype: "audio/mpeg", 
-            caption: "🎵 *Successfully Downloaded!*" 
-        }, { quoted: mek });
+        // API 2: https://dark-shan-yt.koyeb.app/download/instagram
+        const api2Url = `https://dark-shan-yt.koyeb.app/download/instagram?url=${q}`;
+        const api2Response = await fetch(api2Url);
+        const api2Data = await api2Response.json();
 
-        await conn.sendMessage(from, { 
-            document: { url: downloadUrl }, 
-            mimetype: "audio/mpeg", 
-            fileName: `${deta.title}.mp3`, 
-            caption: "📎 *Document Version*\n\n✨ *Thanks for using our service!*" 
-        }, { quoted: mek });
+        if (api2Data.data && api2Data.data.url) {
+            const { caption, username, url } = api2Data.data;
 
-    } catch (error) {
-        reply("❌ Error downloading audio: " + error.message);
+            let desc = `ᴅɪᴅᴜʟᴀ ᴍᴅ ᴠ2 ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴛʜɪꜱ ᴠɪᴅᴇᴏ - \n*${caption} 💚*`;
+
+            await conn.sendMessage(from, { video: { url }, mimetype: "video/mp4", caption: "*©ᴅɪᴅᴜʟᴀ ᴍᴅ ᴠ2💚*" }, { quoted: mek });
+            await conn.sendMessage(from, { document: { url }, mimetype: "video/mp4", fileName: `${username}-${caption}.mp4` }, { quoted: mek });
+            return;
+        }
+
+        // API 3: https://vajira-official-api.vercel.app/download/ytmp3
+        const api3Url = `https://vajira-official-api.vercel.app/download/ytmp3?url=${q}`;
+        const api3Response = await fetch(api3Url);
+        const api3Data = await api3Response.json();
+
+        if (api3Data.dl_link) {
+            const { dl_link } = api3Data;
+
+            await conn.sendMessage(from, { audio: { url: dl_link }, mimetype: "audio/mpeg", caption: "*©ᴅɪᴅᴜʟᴀ ᴍᴅ ᴠ2💚*" }, { quoted: mek });
+            await conn.sendMessage(from, { document: { url: dl_link }, mimetype: "audio/mpeg", fileName: `${q.split('/')[q.split('/').length - 1]}.mp3` }, { quoted: mek });
+            return;
+        }
+
+        // API 4: https://restapi.apibotwa.biz.id/api/ytmp4
+        const api4Url = `https://restapi.apibotwa.biz.id/api/ytmp4?url=${q}`;
+        const api4Response = await fetch(api4Url);
+        const api4Data = await api4Response.json();
+
+        if (api4Data.data && api4Data.data.download) {
+            const { title, thumbnail, download } = api4Data.data;
+            const { url, filename } = download;
+
+            let desc = `ᴅɪᴅᴜʟᴀ ᴍᴅ ᴠ2 ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴛʜɪꜱ ᴠɪᴅᴇᴏ - \n*${title} 💚*`;
+
+            await conn.sendMessage(from, { image: { url: thumbnail }, caption: desc }, { quoted: mek });
+            await conn.sendMessage(from, { video: { url }, mimetype: "video/mp4", caption: "*©ᴅɪᴅᴜʟᴀ ᴍᴅ ᴠ2💚*" }, { quoted: mek });
+            await conn.sendMessage(from, { document: { url }, mimetype: "video/mp4", fileName: `${filename}` }, { quoted: mek });
+            return;
+        }
+
+        // API 5: https://apis.davidcyriltech.my.id/download/ytmp3
+        const api5Url = `https://apis.davidcyriltech.my.id/download/ytmp3?url=${q}`;
+        const api5Response = await fetch(api5Url);
+        const api5Data = await api5Response.json();
+
+        if (api5Data.result && api5Data.result.download_url) {
+            const { title, thumbnail, download_url } = api5Data.result;
+
+            let desc = `ᴅɪᴅᴜʟᴀ ᴍᴅ ᴠ2 ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴛʜɪꜱ ꜱᴏɴɢ - \n*${title} 💚*`;
+
+            await conn.sendMessage(from, { image: { url: thumbnail }, caption: desc }, { quoted: mek });
+            await conn.sendMessage(from, { audio: { url: download_url }, mimetype: "audio/mpeg", caption: "*©ᴅɪᴅᴜʟᴀ ᴍᴅ ᴠ2💚*" }, { quoted: mek });
+            await conn.sendMessage(from, { document: { url: download_url }, mimetype: "audio/mpeg", fileName: `${title}.mp3` }, { quoted: mek });
+            return;
+        }
+
+        reply("*❌ Error occurred while downloading the content. Please try again later.*");
+    } catch (e) {
+        console.log(e);
+        reply(`${e}`);
     }
-
-} catch (e) {
-    console.log(e);
-    reply(`❌ Error: ${e.message}`);
-}
 });
 
 cmd({
     pattern: "video",
-    alias: ["video2"],
     react: "🎥",
-    desc: "download video",
+    desc: "Download video",
     category: "download",
     filename: __filename
-},
-async(conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
-try {
-    if (!q) return reply("*⚠️ Please provide a video title or URL*\n\n*Example:* .video Alan Walker - Faded");
-
-    const query = String(q);
-    const search = await yts(query);
-
-    if (!search.videos || !search.videos.length) {
-        return reply("❌ No results found! Please try another search.");
-    }
-
-    const deta = search.videos[0];
-    const url = deta.url;
-
-    let desc = `🎥 *Now Downloading:* ${deta.title}
-
-⏱️ *Duration:* ${deta.timestamp}
-👁️ *Views:* ${deta.views}
-📅 *Uploaded:* ${deta.ago}
-👤 *Author:* ${deta.author.name}
-
-⏳ *Please wait, processing your request...*`;
-
-    await conn.sendMessage(from, { 
-        image: { url: deta.thumbnail }, 
-        caption: desc 
-    }, { quoted: mek }).catch(() => reply("❌ Error sending thumbnail"));
-
+}, async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
     try {
-        // Try primary API (Dark Yasiya API)
-        let downloadUrl;
-        try {
-            const response1 = await axios.get(`https://www.dark-yasiya-api.site/download/ytmp4?url=${encodeURIComponent(url)}&quality=360`);
-            downloadUrl = response1.data.download.url;
-        } catch {
-            // Fallback to RestAPI
-            try {
-                const response2 = await axios.get(`https://restapi.apibotwa.biz.id/api/ytmp4?url=${encodeURIComponent(url)}`);
-                downloadUrl = response2.data.data.download.url;
-            } catch {
-                // Final fallback
-                const response3 = await axios.get(`https://api.giftedtech.my.id/api/download/ytmp4?apikey=king_haki-k7gjd8@gifted_api&url=${encodeURIComponent(url)}`);
-                downloadUrl = response3.data.result.download_url;
-            }
+        if (!q) return reply("*❌ Please provide a URL or title*");
+
+        // API 1: https://www.dark-yasiya-api.site/download/ytmp4
+        const api1Url = `https://www.dark-yasiya-api.site/download/ytmp4?url=${q}&quality=best`;
+        const api1Response = await fetch(api1Url);
+        const api1Data = await api1Response.json();
+
+        if (api1Data.download) {
+            const { title, thumbnail, download } = api1Data;
+            const { url, filename } = download;
+
+            let desc = `ᴅɪᴅᴜʟᴀ ᴍᴅ ᴠ2 ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴛʜɪꜱ ᴠɪᴅᴇᴏ - \n*${title} 💚*`;
+
+            await conn.sendMessage(from, { image: { url: thumbnail }, caption: desc }, { quoted: mek });
+            await conn.sendMessage(from, { video: { url }, mimetype: "video/mp4", caption: "*©ᴅɪᴅᴜʟᴀ ᴍᴅ ᴠ2💚*" }, { quoted: mek });
+            await conn.sendMessage(from, { document: { url }, mimetype: "video/mp4", fileName: `${filename}` }, { quoted: mek });
+            return;
         }
 
-        await conn.sendMessage(from, { 
-            video: { url: downloadUrl }, 
-            mimetype: "video/mp4", 
-            caption: "🎥 *Successfully Downloaded!*" 
-        }, { quoted: mek });
+        // API 2: https://dark-shan-yt.koyeb.app/download/instagram
+        const api2Url = `https://dark-shan-yt.koyeb.app/download/instagram?url=${q}`;
+        const api2Response = await fetch(api2Url);
+        const api2Data = await api2Response.json();
 
-        await conn.sendMessage(from, { 
-            document: { url: downloadUrl }, 
-            mimetype: "video/mp4", 
-            fileName: `${deta.title}.mp4`, 
-            caption: "📎 *Document Version*\n\n✨ *Thanks for using our service!*" 
-        }, { quoted: mek });
+        if (api2Data.data && api2Data.data.url) {
+            const { caption, username, url } = api2Data.data;
 
-    } catch (error) {
-        reply("❌ Error downloading video: " + error.message);
+            let desc = `ᴅɪᴅᴜʟᴀ ᴍᴅ ᴠ2 ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴛʜɪꜱ ᴠɪᴅᴇᴏ - \n*${caption} 💚*`;
+
+            await conn.sendMessage(from, { video: { url }, mimetype: "video/mp4", caption: "*©ᴅɪᴅᴜʟᴀ ᴍᴅ ᴠ2💚*" }, { quoted: mek });
+            await conn.sendMessage(from, { document: { url }, mimetype: "video/mp4", fileName: `${username}-${caption}.mp4` }, { quoted: mek });
+            return;
+        }
+
+        // API 3: https://vajira-official-api.vercel.app/download/ytmp3
+        const api3Url = `https://vajira-official-api.vercel.app/download/ytmp3?url=${q}`;
+        const api3Response = await fetch(api3Url);
+        const api3Data = await api3Response.json();
+
+        if (api3Data.dl_link) {
+            const { dl_link } = api3Data;
+
+            await conn.sendMessage(from, { video: { url: dl_link }, mimetype: "video/mp4", caption: "*©ᴅɪᴅᴜʟᴀ ᴍᴅ ᴠ2💚*" }, { quoted: mek });
+            await conn.sendMessage(from, { document: { url: dl_link }, mimetype: "video/mp4", fileName: `${q.split('/')[q.split('/').length - 1]}.mp4` }, { quoted: mek });
+            return;
+        }
+
+        // API 4: https://restapi.apibotwa.biz.id/api/ytmp4
+        const api4Url = `https://restapi.apibotwa.biz.id/api/ytmp4?url=${q}`;
+        const api4Response = await fetch(api4Url);
+        const api4Data = await api4Response.json();
+
+        if (api4Data.data && api4Data.data.download) {
+            const { title, thumbnail, download } = api4Data.data;
+            const { url, filename } = download;
+
+            let desc = `ᴅɪᴅᴜʟᴀ ᴍᴅ ᴠ2 ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴛʜɪꜱ ᴠɪᴅᴇᴏ - \n*${title} 💚*`;
+
+            await conn.sendMessage(from, { image: { url: thumbnail }, caption: desc }, { quoted: mek });
+            await conn.sendMessage(from, { video: { url }, mimetype: "video/mp4", caption: "*©ᴅɪᴅᴜʟᴀ ᴍᴅ ᴠ2💚*" }, { quoted: mek });
+            await conn.sendMessage(from, { document: { url }, mimetype: "video/mp4", fileName: `${filename}` }, { quoted: mek });
+            return;
+        }
+
+        // API 5: https://apis.davidcyriltech.my.id/download/ytmp3
+        const api5Url = `https://apis.davidcyriltech.my.id/download/ytmp3?url=${q}`;
+        const api5Response = await fetch(api5Url);
+        const api5Data = await api5Response.json();
+
+        if (api5Data.result && api5Data.result.download_url) {
+            const { title, thumbnail, download_url } = api5Data.result;
+
+            let desc = `ᴅɪᴅᴜʟᴀ ᴍᴅ ᴠ2 ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴛʜɪꜱ ᴠɪᴅᴇᴏ - \n*${title} 💚*`;
+
+            await conn.sendMessage(from, { image: { url: thumbnail }, caption: desc }, { quoted: mek });
+            await conn.sendMessage(from, { video: { url: download_url }, mimetype: "video/mp4", caption: "*©ᴅɪᴅᴜʟᴀ ᴍᴅ ᴠ2💚*" }, { quoted: mek });
+            await conn.sendMessage(from, { document: { url: download_url }, mimetype: "video/mp4", fileName: `${title}.mp4` }, { quoted: mek });
+            return;
+        }
+
+        reply("*❌ Error occurred while downloading the content. Please try again later.*");
+    } catch (e) {
+        console.log(e);
+        reply(`${e}`);
     }
-
-} catch (e) {
-    console.log(e);
-    reply(`❌ Error: ${e.message}`);
-}
 });
 
 
